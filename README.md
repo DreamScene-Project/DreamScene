@@ -1,6 +1,6 @@
 # DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling
 
-[Haoran Li](https://github.com/Jahnsonblack/), [Haolin Shi](https://github.com/lclichen/), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), [Yong Liao](), [Lin Wang](), [Lik Hang Lee](), [Pengyuan Zhou]()
+[Haoran Li](https://github.com/Jahnsonblack/), [Haolin Shi](https://github.com/lclichen/), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), Yong Liao, [Lin Wang](https://vlislab22.github.io/vlislab/linwang.html), [Lik-hang Lee](https://www.lhlee.com/), [Pengyuan Zhou](https://github.com/pengyuan-zhou/)
 
 This repository is the official implementation of [DreamScene](https://dreamscene-project.github.io).
 
@@ -18,6 +18,17 @@ Note: We compress these motion pictures for faster previewing.
     </tr>
  </table>
 
-[![Project Page](https://img.shields.io/badge/Project-Website-green)](https://dreamscene-project.github.io)
+[![Project Page](https://img.shields.io/badge/Project-Website-green)](https://dreamscene-project.github.io) [![arXiv](https://img.shields.io/badge/arXiv-2404.03575-b31b1b.svg)](https://arxiv.org/abs/2404.03575)
 
 Coming soon!
+
+## Citation
+
+```
+@article{li2024dreamscene,
+      title={DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling}, 
+      author={Li, Haoran and Shi, Haolin and Zhang, Wenli and Wu, Wenjun and Liao, Yong and Wang, Lin and Lee, Lik-Hang and Zhou, Pengyuan},
+      journal={arXiv preprint arXiv:2404.03575},
+      year={2024}
+}
+```
