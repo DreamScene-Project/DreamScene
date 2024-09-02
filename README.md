@@ -89,13 +89,10 @@ This work is built on many amazing research works and open-source projects, than
 ## Citation
 If you find it useful in your research, please consider citing our paper as follows:
 ```
-@misc{li2024dreamscene3dgaussianbasedtextto3d,
-  title={DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling}, 
-  author={Haoran Li and Haolin Shi and Wenli Zhang and Wenjun Wu and Yong Liao and Lin Wang and Lik-hang Lee and Pengyuan Zhou},
-  year={2024},
-  eprint={2404.03575},
-  archivePrefix={arXiv},
-  primaryClass={cs.CV},
-  url={https://arxiv.org/abs/2404.03575}, 
+@article{li2024dreamscene,
+  title={DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling},
+  author={Li, Haoran and Shi, Haolin and Zhang, Wenli and Wu, Wenjun and Liao, Yong and Wang, Lin and Lee, Lik-hang and Zhou, Pengyuan},
+  journal={arXiv preprint arXiv:2404.03575},
+  year={2024}
 }
 ```

@@ -36,7 +36,7 @@ reconOptimizationParams:
   densify_grad_threshold: 0.001
 
   densify_from_iter: 0
-  densify_until_iter: 50
+  densify_until_iter: 1200
   opacity_reset_interval: 3000
   as_latent_ratio: 0.0
   enable_compress: True
