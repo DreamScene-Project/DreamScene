@@ -85,7 +85,7 @@ log:
 objectParams:
   id: 'armor_man'
   sh_degree: 3
-  text: 'a DSLR photo of a man dressed in medieval armor'
+  text: 'A DSLR photo of Iron Man'
   negative_text: 'oversaturated color, ugly, tiling, low quality, noisy, blurry, out of focus, low contrast, dull, low-resolution, oversaturation.'
   image: ''
   init_guided: 'pointe' # pointe | pointe_330k | pointe_825k
