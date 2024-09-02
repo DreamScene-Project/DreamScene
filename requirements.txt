@@ -1,0 +1,34 @@
+tqdm
+mediapipe
+Pillow
+fire
+imageio
+imageio-ffmpeg
+PyYAML
+safetensors
+wandb
+triton
+gradio
+plyfile
+loguru
+rembg[gpu,cli]
+
+torch==2.2.0+cu118
+torchvision==0.17.0+cu118
+torchaudio==2.2.0+cu118
+
+#pytorch3d
+
+# for stable-diffusion
+diffusers
+transformers
+huggingface_hub
+accelerate
+xformers==0.0.24
+e3nn
+
+# git+https://github.com/openai/point-e.git
+# 换用Cap3D微调的point-e
+
+omegaconf
+jaxtyping

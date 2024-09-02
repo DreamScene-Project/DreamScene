@@ -1,0 +1,31 @@
+# Ignore the experiment directory and all its contents
+experiments/
+
+# Ignore third-party libraries
+point_e_model_cache/
+comp-diff-gaussian-rasterization/
+Cap3D/
+simple-knn/
+pytorch3d/
+*.zip
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment directories
+.env
+.venv/
+
+# Ignore log files
+*.log
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore Windows system files
+Thumbs.db
+
+
