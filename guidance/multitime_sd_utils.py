@@ -616,7 +616,8 @@ class StableDiffusion(nn.Module):
         resolution=(512, 512),
         eta=0.0,
         pred_with_uncond=True,
-    ):
+    ):  
+        """We use DDIM Inversion folloing LucidDreamer here to keep 3D consistency """
         text_embeddings = text_embeddings.to(self.precision_t)
         unet = self.unet
         ind_prev_t = torch.zeros(1, dtype=torch.long, device=self.device)[0]
