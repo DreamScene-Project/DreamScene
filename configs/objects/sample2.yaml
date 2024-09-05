@@ -3,7 +3,7 @@ optimizationParams:
   iterations: 1500
   position_lr_init: 0.0008
   position_lr_final: 0.000016
-  feature_lr: 0.020
+  feature_lr: 0.005
   feature_lr_final: 0.0030
   scaling_lr: 0.005
   scaling_lr_final: 0.001
@@ -13,7 +13,7 @@ optimizationParams:
   densify_grad_threshold: 0.00075
 
   densify_from_iter: 100
-  densify_until_iter: 1400
+  densify_until_iter: 1200
   densification_interval: 100
   opacity_reset_interval: 600
   warmup_iter: 600
@@ -36,7 +36,7 @@ reconOptimizationParams:
   densify_grad_threshold: 0.001
 
   densify_from_iter: 0
-  densify_until_iter: 1200
+  densify_until_iter: 50
   opacity_reset_interval: 3000
   as_latent_ratio: 0.0
   enable_compress: True
