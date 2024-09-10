@@ -133,7 +133,6 @@ class StableDiffusion(nn.Module):
         self.timesteps = torch.flip(self.scheduler.timesteps, dims=(0,))
         self.min_step = int(self.num_train_timesteps * t_range[0])
         self.max_step = int(self.num_train_timesteps * t_range[1])
-        self.warmup_step = int(self.num_train_timesteps * (max_t_range - t_range[1]))
 
         self.stage_range = [400, 850]
         self.stage_range_step = self.stage_range[1] - self.stage_range[0]

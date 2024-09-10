@@ -57,15 +57,10 @@ class OptimizationParams:
     opacity_reset_interval: int = 300
     densify_from_iter: int = 100
     densify_until_iter: int = 30_00
-    enable_compress: bool = False
 
     use_control_net_iter: int = 10000000
-    warmup_iter: int = 1500
 
     use_progressive: bool = False
-    save_process: bool = True
-    pro_frames_num: int = 600
-    pro_render_45: bool = False
     progressive_view_iter: int = 500
     progressive_view_init_ratio: float = 0.2
 
@@ -73,8 +68,8 @@ class OptimizationParams:
     scale_up_factor: float = 0.95
     fovy_scale_up_factor: List[float] = field(default_factory=lambda: [0.75, 1.1])
     phi_scale_up_factor: float = 1.5
-    max_point_number: int = 1500000
-    # If you only need to refine through our through our reconstructive generation process.
+    max_point_number: int = 1200000
+    # If you only need to refine through our reconstructive generation process.
     only_recon_stage: bool = False
     # Common prompts for the entire scene generation process
     style_prompt: str = ""

@@ -1,0 +1,242 @@
+# CUDA_VISIBLE_DEVICES=6,7 python main.py --config configs/scenes/sample_indoor.yaml
+optimizationParams:
+  iterations: 1500
+  position_lr_init: 0.0008
+  position_lr_final: 0.000016
+  feature_lr: 0.020
+  feature_lr_final: 0.0030
+  scaling_lr: 0.005
+  scaling_lr_final: 0.001
+  rotation_lr: 0.001
+  rotation_lr_final: 0.0002
+
+  densify_grad_threshold: 0.00075
+
+  densify_from_iter: 100
+  densify_until_iter: 1400
+  densification_interval: 100
+  opacity_reset_interval: 600
+  style_prompt: 'Japanese style, 4k, 8k, best quality, ultra-detailed, finely detail, highres, high resolution'
+  style_negative_prompt: "exceptionally bright light, animate, cartoon, oversaturated, ugly, tiling, low quality, noisy, blurry, out of focus, low contrast, dull, low-resolution, oversaturation."
+
+reconOptimizationParams:
+  iterations: 40
+  position_lr_init: 0.0008
+  position_lr_final: 0.000008
+  feature_lr: 0.005
+  feature_lr_final: 0.004
+  opacity_lr: 0.05
+  scaling_lr: 0.005
+  scaling_lr_final: 0.002
+  rotation_lr: 0.001
+  rotation_lr_final: 0.0002
+
+  percent_dense: 0.01
+  densify_grad_threshold: 0.001
+
+  densify_from_iter: 0
+  densify_until_iter: 50
+  opacity_reset_interval: 3000
+  as_latent_ratio: 0.0
+
+generateCamParams:
+  phi_range: [-180, 180]
+  max_phi_range: [-180, 180]
+  rand_cam_gamma: 1.
+
+  theta_range: [45, 105]
+  max_theta_range: [45, 105]
+
+  radius_range: [5.2, 5.5] 
+  max_radius_range: [3.5, 5.0]
+  default_radius: 3.5
+ 
+  default_fovy: 0.55
+  fovy_range: [0.32, 0.60]
+  max_fovy_range: [0.16, 0.60]
+
+sceneOptimizationParams:
+  iterations: 1000
+  position_lr_init: 0.0008
+  position_lr_final: 0.000025
+  feature_lr: 0.020
+  feature_lr_final: 0.005
+  scaling_lr: 0.005
+  scaling_lr_final: 0.005
+  rotation_lr: 0.001
+  rotation_lr_final: 0.0004
+  densify_grad_threshold: 0.001
+
+  densify_from_iter: 100
+  densify_until_iter: 1400
+  densification_interval: 100
+  opacity_reset_interval: 30000
+  max_point_number: 3000000
+  lambda_scale: 0.5
+  lambda_tv: 1.0
+  lambda_tv_depth: 0.0
+  # lambda_l2: 100
+  style_prompt: 'Japanese style, 4k, 8k, best quality, ultra-detailed, finely detail, highres, high resolution'
+  style_negative_prompt: "cookers, burners, tvs, sofas, tables, exceptionally bright light, humans, animals, furniture, couches, chairs, desks, lamps, paintings, seats, decoration, text, distortions, blurry, details are low, distorted details, low quality, overexposed, oversaturated, plain background, simple background, unattractive, underexposed, low-contrast, unreal architecture, unreal sky, weird colors"
+
+reconSceneOptimizationParams:
+  iterations: 1000
+  position_lr_init: 0.0008
+  position_lr_final: 0.000008
+  feature_lr: 0.005
+  feature_lr_final: 0.004
+  opacity_lr: 0.05
+  scaling_lr: 0.005 
+  scaling_lr_final: 0.002
+  rotation_lr: 0.001
+  rotation_lr_final: 0.0002
+
+  percent_dense: 0.01
+  densify_grad_threshold: 0.001
+
+  densify_from_iter: 0
+  densify_until_iter: 50
+  opacity_reset_interval: 300000
+  as_latent_ratio: 0.0
+  max_point_number: 3000000
+
+fineSceneOptimizationParams:
+  iterations: 2000
+  position_lr_init: 0.00008
+  position_lr_final: 0.000008
+  feature_lr: 0.001
+  feature_lr_final: 0.0005
+  scaling_lr: 0.001
+  scaling_lr_final: 0.0005
+  rotation_lr: 0.0002
+  rotation_lr_final: 0.00005
+  densify_grad_threshold: 0.001
+
+  densify_from_iter: 0
+  densify_until_iter: 900
+  densification_interval: 100
+  opacity_reset_interval: 30000
+  max_point_number: 3000000
+  lambda_scale: 0.5
+  lambda_tv: 1.0
+  lambda_tv_depth: 0.0
+  # lambda_l2: 100
+  style_prompt: 'Japanese style, 4k, 8k, best quality, ultra-detailed, finely detail, highres, high resolution'
+  style_negative_prompt: "exceptionally bright light, beds, desks, tables, tvs, sofas, humans, animals, furniture, couches, chairs, desks, lamps, paintings, seats, decoration, text, distortions, blurry, details are low, distorted details, low quality, overexposed, oversaturated, plain background, simple background, unattractive, underexposed, low-contrast, unreal architecture, unreal sky, weird colors"
+
+sceneGenerateCamParams:
+  phi_range: [-180, 180]
+  max_phi_range: [-180, 180]
+  rand_cam_gamma: 1.
+
+  theta_range: [45, 105]
+  max_theta_range: [45, 105]
+
+  radius_range: [5.2, 5.5] 
+  max_radius_range: [3.5, 5.0]
+  default_radius: 4.5
+ 
+  default_fovy: 0.96
+  fovy_range: [0.70, 1.20]
+  max_fovy_range: [0.70, 1.00]
+
+guidanceParams:
+  model_key: 'stabilityai/stable-diffusion-2-1-base'
+  perpneg: false
+  C_batch_size: 4
+  lambda_guidance: 0.1
+  noise_seed: 0
+
+  delta_t: 50
+  guidance: 'MTSD'
+  g_device: 'cuda:1'
+
+  random_delta: True
+  vis_interval: 100
+
+visualize_samples: True
+
+modelParams:
+  bg_aug_ratio: 0.66
+
+seed: 0
+
+log:
+  exp_name: 'scene_indoor_generation'
+  eval_only: False
+
+scene_configs:
+  objects:
+    - id: 'refrigerator'
+      sh_degree: 1
+      text: 'A DSLR photo of a modern smart white domestic double door refrigerator'
+      negative_text: ''
+      image: ''
+      init_guided: 'pointe'
+      init_prompt: 'A white domestic double door refrigerator.'
+      cam_pose_method: 'object'
+      use_pointe_rgb: false
+      num_pts: 20000
+      radius: 0.5
+    - id: 'cookers'
+      sh_degree: 1
+      text: 'A DSLR photo of a modern gas stove with multiple burners'
+      negative_text: ''
+      image: ''
+      init_guided: 'pointe'
+      init_prompt: 'A wide modern gas stove.'
+      cam_pose_method: 'object'
+      use_pointe_rgb: false
+      num_pts: 20000
+      radius: 0.5
+    - id: 'cabinets'
+      sh_degree: 1
+      text: 'A DSLR photo of white sleek kitchen cabinets with silver handles'
+      negative_text: ''
+      image: ''
+      init_guided: 'pointe'
+      init_prompt: 'Sleek, white kitchen cabinets with silver handles.'
+      cam_pose_method: 'object'
+      use_pointe_rgb: false
+      num_pts: 20000
+      radius: 0.5
+
+  scene:
+    scene_name: 'kitchen'
+    sh_degree: 1
+    cam_pose_method: 'indoor'
+    scene_text: 'A DSLR photo of an Japanese style kitchen'
+    negative_text: ''
+    zero_ground: true
+    # Set the ground with height=0 (or Z=0)
+    floor_init_color: [240,240,244]
+    # Ground color initialization (only for outdoor generation)
+    env_init_color: [255,80,80]
+    # Env color initialization (only for outdoor generation)
+    radius: [3.5,2.5,5.0]
+    # Room size setting, [X, Y, Z] from [0, 0, 0]
+    # At initialization, the values of X and Y are used for the symmetric -X and -Y
+
+    scene_composition:
+      - id: 'refrigerator'
+        params:
+          - center: [-3, 2, 0.0]
+            rotation: [0.0, 0.0, 0.0]
+            scale: [2.0, 2.0, 2.0]
+      - id: 'cookers'
+        params:
+          - center: [0.0, 2, 0.0]
+            rotation: [0.0, 0.0, 180.0]
+            scale: [2.0, 2.0, 2.0]
+      - id: 'cabinets'
+        params:
+          - center: [3, 2.1, 0.0]
+            rotation: [0.0, 0.0, 180.0]
+            scale: [1.2, 1.2, 1.2]
+          - center: [3.2, -2.2, 0.0]
+            rotation: [0.0, 0.0, 0.0]
+            scale: [1.2, 1.2, 1.2]
+mode_args:
+  prune_decay: 0.8 # for compression
+  v_pow: 0.1 # for compression
+  prune_percent: 0.5 # for compression

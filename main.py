@@ -4,7 +4,7 @@ from omegaconf import OmegaConf
 
 from config import ObjectsParamsGroups, ParamsGroups
 from training import ObjectTrainer
-# from training import SceneTrainer
+from training import SceneTrainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

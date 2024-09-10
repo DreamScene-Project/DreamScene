@@ -1,5 +1,5 @@
 # DreamScene
-[Haoran Li](https://github.com/Jahnsonblack/), [Haolin Shi](https://github.com/lclichen/), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), Yong Liao, [Lin Wang](https://vlislab22.github.io/vlislab/linwang.html), [Lik-hang Lee](https://www.lhlee.com/), [Pengyuan Zhou](https://github.com/pengyuan-zhou/)
+[Haoran Li](https://github.com/Jahnsonblack/), [Haolin Shi](https://i.4c43.work), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), Yong Liao, [Lin Wang](https://vlislab22.github.io/vlislab/linwang.html), [Lik-hang Lee](https://www.lhlee.com/), [Pengyuan Zhou](https://github.com/pengyuan-zhou/)
 
 This repository contains the official implementation for [DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling](https://arxiv.org/abs/2404.03575).
 
@@ -24,7 +24,8 @@ Note: We compress these motion pictures for faster previewing.
 
 ### TODO
 - [x] Release the code of Formation Pattern Sampling (FPS) for single object.
-- [ ] Release the code of entire DreamScene for generating dream scenes and our demo video. (Before Sep. 14)
+- [x] Release the code of entire DreamScene for generating dream scenes and our demo video.
+- [ ] More samples, and tools for generating layout interactively.
 
 ## Getting Start!
 ### Requirments
@@ -75,7 +76,13 @@ python main.py --object --config configs/objects/sample.yaml
 
 ### Generate Entire Scenes
 
-Coming Soon.
+If your device has more than 40G VRAM, you can run it with a single card. Otherwise, it is recommended to use dual cards.
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1 python main.py --config configs/scenes/sample_indoor.yaml
+
+CUDA_VISIBLE_DEVICES=2,3 python main.py --config configs/scenes/sample_outdoor.yaml
+```
 
 ## Acknowledgement
 

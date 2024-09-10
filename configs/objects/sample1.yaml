@@ -16,8 +16,6 @@ optimizationParams:
   densify_until_iter: 1400
   densification_interval: 100
   opacity_reset_interval: 600
-  warmup_iter: 600
-  enable_compress: True
   style_prompt: '4k, 8k, best quality, ultra-detailed, finely detail, highres, high resolution'
 
 reconOptimizationParams:
@@ -39,7 +37,6 @@ reconOptimizationParams:
   densify_until_iter: 50
   opacity_reset_interval: 3000
   as_latent_ratio: 0.0
-  enable_compress: True
 
 generateCamParams:
   phi_range: [-180, 180]

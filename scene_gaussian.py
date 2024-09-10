@@ -46,7 +46,6 @@ class SceneGaussian(GaussianModel):
         )
         self.cfg = cfg
         self.cameras_extent = self.cfg.generateCamParams.default_radius
-        self.enable_compress = self.cfg.optimizationParams.enable_compress
         self.objects_args = []
         self.objects_count = 0
         self.stage_n = 0
@@ -553,7 +552,6 @@ class SceneGaussian(GaussianModel):
         # Set up rasterization configuration
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-        the_score_flag = True
 
         raster_settings = GaussianRasterizationSettings(
             image_height=int(viewpoint_camera.image_height),
@@ -567,7 +565,7 @@ class SceneGaussian(GaussianModel):
             sh_degree=act_SH,
             campos=viewpoint_camera.camera_center,
             prefiltered=False,
-            score_flag=the_score_flag,
+            score_flag=True,
         )
 
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
@@ -696,42 +694,29 @@ class SceneGaussian(GaussianModel):
             act_SH = self.env_gaussian.active_sh_degree
 
         if random.random() < bg_aug_ratio and not test:
-            bg_color = torch.zeros_like(bg_color)
+            if random.random() < 0.5:
+                bg_color = torch.rand_like(bg_color)
+            else:
+                bg_color = torch.zeros_like(bg_color)
 
         # Set up rasterization configuration
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
         try:
-            the_score_flag = False
-            if self.enable_compress:
-                raster_settings = GaussianRasterizationSettings(
-                    image_height=int(viewpoint_camera.image_height),
-                    image_width=int(viewpoint_camera.image_width),
-                    tanfovx=tanfovx,
-                    tanfovy=tanfovy,
-                    bg=bg_color,
-                    scale_modifier=scaling_modifier,
-                    viewmatrix=viewpoint_camera.world_view_transform,
-                    projmatrix=viewpoint_camera.full_proj_transform,
-                    sh_degree=act_SH,
-                    campos=viewpoint_camera.camera_center,
-                    prefiltered=False,
-                    score_flag=the_score_flag,
-                )
-            else:
-                raster_settings = GaussianRasterizationSettings(
-                    image_height=int(viewpoint_camera.image_height),
-                    image_width=int(viewpoint_camera.image_width),
-                    tanfovx=tanfovx,
-                    tanfovy=tanfovy,
-                    bg=bg_color,
-                    scale_modifier=scaling_modifier,
-                    viewmatrix=viewpoint_camera.world_view_transform,
-                    projmatrix=viewpoint_camera.full_proj_transform,
-                    sh_degree=act_SH,
-                    campos=viewpoint_camera.camera_center,
-                    prefiltered=False,
-                )
+            raster_settings = GaussianRasterizationSettings(
+                image_height=int(viewpoint_camera.image_height),
+                image_width=int(viewpoint_camera.image_width),
+                tanfovx=tanfovx,
+                tanfovy=tanfovy,
+                bg=bg_color,
+                scale_modifier=scaling_modifier,
+                viewmatrix=viewpoint_camera.world_view_transform,
+                projmatrix=viewpoint_camera.full_proj_transform,
+                sh_degree=act_SH,
+                campos=viewpoint_camera.camera_center,
+                prefiltered=False,
+                score_flag=False,
+            )
         except TypeError as e:
             raster_settings = GaussianRasterizationSettings(
                 image_height=int(viewpoint_camera.image_height),
@@ -945,36 +930,20 @@ class SceneGaussian(GaussianModel):
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
         try:
-            the_score_flag = False
-            if self.enable_compress:
-                raster_settings = GaussianRasterizationSettings(
-                    image_height=int(viewpoint_camera.image_height),
-                    image_width=int(viewpoint_camera.image_width),
-                    tanfovx=tanfovx,
-                    tanfovy=tanfovy,
-                    bg=bg_color,
-                    scale_modifier=scaling_modifier,
-                    viewmatrix=viewpoint_camera.world_view_transform,
-                    projmatrix=viewpoint_camera.full_proj_transform,
-                    sh_degree=act_SH,
-                    campos=viewpoint_camera.camera_center,
-                    prefiltered=False,
-                    score_flag=the_score_flag,
-                )
-            else:
-                raster_settings = GaussianRasterizationSettings(
-                    image_height=int(viewpoint_camera.image_height),
-                    image_width=int(viewpoint_camera.image_width),
-                    tanfovx=tanfovx,
-                    tanfovy=tanfovy,
-                    bg=bg_color,
-                    scale_modifier=scaling_modifier,
-                    viewmatrix=viewpoint_camera.world_view_transform,
-                    projmatrix=viewpoint_camera.full_proj_transform,
-                    sh_degree=act_SH,
-                    campos=viewpoint_camera.camera_center,
-                    prefiltered=False,
-                )
+            raster_settings = GaussianRasterizationSettings(
+                image_height=int(viewpoint_camera.image_height),
+                image_width=int(viewpoint_camera.image_width),
+                tanfovx=tanfovx,
+                tanfovy=tanfovy,
+                bg=bg_color,
+                scale_modifier=scaling_modifier,
+                viewmatrix=viewpoint_camera.world_view_transform,
+                projmatrix=viewpoint_camera.full_proj_transform,
+                sh_degree=act_SH,
+                campos=viewpoint_camera.camera_center,
+                prefiltered=False,
+                score_flag=False,
+            )
         except TypeError as e:
             raster_settings = GaussianRasterizationSettings(
                 image_height=int(viewpoint_camera.image_height),

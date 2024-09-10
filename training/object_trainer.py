@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import tqdm
 from loguru import logger
+from torchvision.utils import save_image
 
 from scene_gaussian import ObjectGaussian, SceneGaussian, gaussian_filtering
 from utils.cam_utils import (_get_dir_ind, loadClipCam, loadRandomCam,
@@ -77,9 +78,7 @@ class ObjectTrainer:
         self.gs_obj.model.save_ply(path)
         logger.debug(f"[INFO] save ply model to {path}.")
 
-    def video_inference(
-        self, step: int, gs_obj: ObjectGaussian, save_folder: str
-    ) -> None:
+    def video_inference(self, step: int, gs_obj: ObjectGaussian, save_folder: str) -> None:
         """generate video"""
         video_cameras = loadClipCam(self.pose_args)
         bg_color = torch.tensor(
@@ -90,9 +89,7 @@ class ObjectTrainer:
         img_frames = []
         depth_frames = []
         for viewpoint in video_cameras:
-            out = self.renderer.object_render(
-                gs_obj.model, viewpoint, bg_color=bg_color, test=True
-            )
+            out = self.renderer.object_render(gs_obj.model, viewpoint, bg_color=bg_color, test=True)
             rgb, depth = out["image"], out["depth"]
             if depth is not None:
                 depth_norm = depth / depth.max()
@@ -113,14 +110,15 @@ class ObjectTrainer:
         )
         if len(depth_frames) > 0:
             imageio.mimwrite(
-                os.path.join(
-                    save_folder, "video_depth_{}_{}.mp4".format(gs_obj.id, step)
-                ),
+                os.path.join(save_folder, "video_depth_{}_{}.mp4".format(gs_obj.id, step)),
                 depth_frames,
                 fps=30,
                 quality=8,
             )
         logger.debug("[ITER {}] Video Save Done!".format(step))
+
+    def save_recon_img(self, path, pred_rgb, gt_image):
+        save_image([pred_rgb, gt_image], path)
 
     def prepare_train(self) -> None:
         """load text-to-image to guide 3D representation generation"""
@@ -149,9 +147,7 @@ class ObjectTrainer:
         """Caculate embeddings of positive text and negativae_text"""
 
         gs_obj = self.gs_obj
-        gs_obj.text["text_embeddings"] = self.calc_text_embeddings(
-            gs_obj.text["text"], gs_obj.text["negative_text"]
-        )
+        gs_obj.text["text_embeddings"] = self.calc_text_embeddings(gs_obj.text["text"], gs_obj.text["negative_text"])
 
     def calc_text_embeddings(self, ref_text: str, negative_text: str = ""):
         """we caculate text embeddings following CSD(Classifier Score Distillation)"""
@@ -159,24 +155,16 @@ class ObjectTrainer:
 
         style_prompt = self.optimizationParams.style_prompt
         style_negative_prompt = self.optimizationParams.style_negative_prompt
-        embeddings["default"] = self.guidance.get_text_embeds(
-            [ref_text + ", " + style_prompt]
-        )
-        embeddings["uncond"] = self.guidance.get_text_embeds(
-            [negative_text + ", " + style_negative_prompt]
-        )
+        embeddings["default"] = self.guidance.get_text_embeds([ref_text + ", " + style_prompt])
+        embeddings["uncond"] = self.guidance.get_text_embeds([negative_text + ", " + style_negative_prompt])
 
-        embeddings["inverse_text"] = self.guidance.get_text_embeds(
-            self.guidance_opt.inverse_text
-        )
+        embeddings["inverse_text"] = self.guidance.get_text_embeds(self.guidance_opt.inverse_text)
 
         embeddings["text_embeddings_vd"] = {}
         embeddings["uncond_text_embeddings_vd"] = {}
 
         for d in ["front", "side", "back", "overhead", "bottom"]:
-            embeddings["text_embeddings_vd"][d] = self.guidance.get_text_embeds(
-                [f"{ref_text}, {d} view, {style_prompt}"]
-            )
+            embeddings["text_embeddings_vd"][d] = self.guidance.get_text_embeds([f"{ref_text}, {d} view, {style_prompt}"])
 
         for d, d_neg in zip(
             ["front", "side", "back", "overhead", "bottom"],
@@ -188,9 +176,7 @@ class ObjectTrainer:
                 "front view, back view, side view, overhead view",
             ],
         ):
-            embeddings["uncond_text_embeddings_vd"][d] = self.guidance.get_text_embeds(
-                [f"{negative_text}, {d_neg}, {style_negative_prompt}"]
-            )
+            embeddings["uncond_text_embeddings_vd"][d] = self.guidance.get_text_embeds([f"{negative_text}, {d_neg}, {style_negative_prompt}"])
 
         return embeddings
 
@@ -205,9 +191,7 @@ class ObjectTrainer:
     ) -> Tuple[torch.Tensor, list]:
         """Get text emdedding in different directions"""
 
-        assert (
-            view_dependent_prompting
-        ), "Perp-Neg only works with view-dependent prompting"
+        assert view_dependent_prompting, "Perp-Neg only works with view-dependent prompting"
 
         batch_size = elevation.shape[0]
 
@@ -218,12 +202,8 @@ class ObjectTrainer:
         for ele, azi, dis in zip(elevation, azimuth, camera_distances):
             idx = _get_dir_ind(ele, azi, dis, distinguish_lr=True)
             idxs.append(idx)
-            uncond_text_embeddings.append(
-                obj_text_embeddings["uncond_text_embeddings_vd"][idx].squeeze(0)
-            )
-            pos_text_embeddings.append(
-                obj_text_embeddings["text_embeddings_vd"][idx].squeeze(0)
-            )
+            uncond_text_embeddings.append(obj_text_embeddings["uncond_text_embeddings_vd"][idx].squeeze(0))
+            pos_text_embeddings.append(obj_text_embeddings["text_embeddings_vd"][idx].squeeze(0))
         if return_null_text_embeddings:
             text_embeddings = torch.cat(
                 [
@@ -264,19 +244,14 @@ class ObjectTrainer:
                 gs_obj.model.oneupSHdegree()
 
             if not optimParams.use_progressive:
-                if (
-                    self.step >= optimParams.progressive_view_iter
-                    and self.step % optimParams.scale_up_cameras_iter == 0
-                ):
+                if self.step >= optimParams.progressive_view_iter and self.step % optimParams.scale_up_cameras_iter == 0:
                     self.pose_args.fovy_range[0] = max(
                         self.pose_args.max_fovy_range[0],
-                        self.pose_args.fovy_range[0]
-                        * optimParams.fovy_scale_up_factor[0],
+                        self.pose_args.fovy_range[0] * optimParams.fovy_scale_up_factor[0],
                     )
                     self.pose_args.fovy_range[1] = min(
                         self.pose_args.max_fovy_range[1],
-                        self.pose_args.fovy_range[1]
-                        * optimParams.fovy_scale_up_factor[1],
+                        self.pose_args.fovy_range[1] * optimParams.fovy_scale_up_factor[1],
                     )
 
                     self.pose_args.radius_range[1] = max(
@@ -294,9 +269,7 @@ class ObjectTrainer:
                     )
                     self.pose_args.theta_range[0] = max(
                         self.pose_args.max_theta_range[0],
-                        self.pose_args.theta_range[0]
-                        * 1
-                        / optimParams.phi_scale_up_factor,
+                        self.pose_args.theta_range[0] * 1 / optimParams.phi_scale_up_factor,
                     )
                     self.pose_args.phi_range[0] = max(
                         self.pose_args.max_phi_range[0],
@@ -307,12 +280,8 @@ class ObjectTrainer:
                         self.pose_args.phi_range[1] * optimParams.phi_scale_up_factor,
                     )
 
-                    logger.debug(
-                        f"scale up theta_range to: {self.pose_args.theta_range}"
-                    )
-                    logger.debug(
-                        f"scale up radius_range to: {self.pose_args.radius_range}"
-                    )
+                    logger.debug(f"scale up theta_range to: {self.pose_args.theta_range}")
+                    logger.debug(f"scale up radius_range to: {self.pose_args.radius_range}")
                     logger.debug(f"scale up phi_range to: {self.pose_args.phi_range}")
                     logger.debug(f"scale up fovy_range to: {self.pose_args.fovy_range}")
 
@@ -323,18 +292,12 @@ class ObjectTrainer:
             alphas = []
             scales = []
 
-            elevation = torch.zeros(
-                C_batch_size, dtype=torch.float32, device=self.device
-            )
+            elevation = torch.zeros(C_batch_size, dtype=torch.float32, device=self.device)
             azimuth = torch.zeros(C_batch_size, dtype=torch.float32, device=self.device)
-            camera_distances = torch.zeros(
-                C_batch_size, dtype=torch.float32, device=self.device
-            )
+            camera_distances = torch.zeros(C_batch_size, dtype=torch.float32, device=self.device)
 
             if self.avoid_multi_face:
-                viewpoint_cams = loadRandomCamAvoidMultiFace_4p(
-                    self.pose_args, float(self.step) / iters, SSAA=True, size=4
-                )
+                viewpoint_cams = loadRandomCamAvoidMultiFace_4p(self.pose_args, float(self.step) / iters, SSAA=True, size=4)
 
             for i in range(C_batch_size):
                 if self.avoid_multi_face:
@@ -379,14 +342,9 @@ class ObjectTrainer:
             _aslatent = False
             use_control_net = False
 
-            if (
-                self.step < optimParams.geo_iter
-                or random.random() < optimParams.as_latent_ratio
-            ):
+            if self.step < optimParams.geo_iter or random.random() < optimParams.as_latent_ratio:
                 _aslatent = True
-            if self.step > optimParams.use_control_net_iter and (
-                random.random() < self.guidance_opt.controlnet_ratio
-            ):
+            if self.step > optimParams.use_control_net_iter and (random.random() < self.guidance_opt.controlnet_ratio):
                 use_control_net = True
 
             (text_embeddings, vds) = self.get_text_embeddings(
@@ -420,11 +378,7 @@ class ObjectTrainer:
             scales = torch.stack(scales, dim=0)
             loss_scale = torch.mean(scales, dim=-1).mean()
             loss_tv = tv_loss(images) + tv_loss(depths)
-            loss = (
-                loss
-                + optimParams.lambda_tv * loss_tv
-                + optimParams.lambda_scale * loss_scale
-            )
+            loss = loss + optimParams.lambda_tv * loss_tv + optimParams.lambda_scale * loss_scale
             loss.backward()
 
             # densify and prune
@@ -433,18 +387,11 @@ class ObjectTrainer:
                     gs_obj.model.max_radii2D[visibility_filter],
                     radii[visibility_filter],
                 )
-                gs_obj.model.add_densification_stats(
-                    viewspace_point_tensor, visibility_filter
-                )
+                gs_obj.model.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-                if (
-                    self.step >= optimParams.densify_from_iter
-                    and self.step % optimParams.densification_interval == 0
-                ):
+                if self.step >= optimParams.densify_from_iter and self.step % optimParams.densification_interval == 0:
                     pcn_0 = gs_obj.model.get_xyz.shape[0]
-                    size_threshold = (
-                        20 if self.step > optimParams.opacity_reset_interval else None
-                    )
+                    size_threshold = 20 if self.step > optimParams.opacity_reset_interval else None
 
                     if pcn_0 < optimParams.max_point_number:
                         gs_obj.model.densify_and_prune(
@@ -475,13 +422,9 @@ class ObjectTrainer:
                             "densify_and_prune",
                         )
 
-                        if optimParams.enable_compress and self.step < 1500:
+                        if self.step < 1500:
                             bg_color = torch.tensor(
-                                (
-                                    [1, 1, 1]
-                                    if self.dataset_args._white_background
-                                    else [0, 0, 0]
-                                ),
+                                ([1, 1, 1] if self.dataset_args._white_background else [0, 0, 0]),
                                 dtype=torch.float32,
                                 device="cuda",
                             )
@@ -511,7 +454,7 @@ class ObjectTrainer:
                     bg_color,
                     self.mode_args.v_pow,
                     self.mode_args.prune_decay,
-                    0.3
+                    0.3,
                     # self.mode_args.prune_percent,
                 )
 
@@ -530,9 +473,7 @@ class ObjectTrainer:
         for _ in range(self.train_steps):
             self.step += 1
             if self.gt_images == None:
-                self.viewpoint_cams = loadRecoCam(
-                    self.pose_args, [4, 12, 14, 6], [100, 85, 75, 55], scale=0.9
-                )
+                self.viewpoint_cams = loadRecoCam(self.pose_args, [4, 12, 14, 6], [100, 85, 75, 55], scale=0.9)
                 self.gt_size = len(self.viewpoint_cams)
 
             self.bg_color = torch.tensor(
@@ -551,19 +492,14 @@ class ObjectTrainer:
                 gs_obj.model.oneupSHdegree()
 
             if not optimParams.use_progressive:
-                if (
-                    self.step >= optimParams.progressive_view_iter
-                    and self.step % optimParams.scale_up_cameras_iter == 0
-                ):
+                if self.step >= optimParams.progressive_view_iter and self.step % optimParams.scale_up_cameras_iter == 0:
                     self.pose_args.fovy_range[0] = max(
                         self.pose_args.max_fovy_range[0],
-                        self.pose_args.fovy_range[0]
-                        * optimParams.fovy_scale_up_factor[0],
+                        self.pose_args.fovy_range[0] * optimParams.fovy_scale_up_factor[0],
                     )
                     self.pose_args.fovy_range[1] = min(
                         self.pose_args.max_fovy_range[1],
-                        self.pose_args.fovy_range[1]
-                        * optimParams.fovy_scale_up_factor[1],
+                        self.pose_args.fovy_range[1] * optimParams.fovy_scale_up_factor[1],
                     )
 
                     self.pose_args.radius_range[1] = max(
@@ -581,9 +517,7 @@ class ObjectTrainer:
                     )
                     self.pose_args.theta_range[0] = max(
                         self.pose_args.max_theta_range[0],
-                        self.pose_args.theta_range[0]
-                        * 1
-                        / optimParams.phi_scale_up_factor,
+                        self.pose_args.theta_range[0] * 1 / optimParams.phi_scale_up_factor,
                     )
 
                     # opt.reset_resnet_iter = max(500, opt.reset_resnet_iter // 1.25)
@@ -596,12 +530,8 @@ class ObjectTrainer:
                         self.pose_args.phi_range[1] * optimParams.phi_scale_up_factor,
                     )
 
-                    logger.debug(
-                        f"scale up theta_range to: {self.pose_args.theta_range}"
-                    )
-                    logger.debug(
-                        f"scale up radius_range to: {self.pose_args.radius_range}"
-                    )
+                    logger.debug(f"scale up theta_range to: {self.pose_args.theta_range}")
+                    logger.debug(f"scale up radius_range to: {self.pose_args.radius_range}")
                     logger.debug(f"scale up phi_range to: {self.pose_args.phi_range}")
                     logger.debug(f"scale up fovy_range to: {self.pose_args.fovy_range}")
 
@@ -613,15 +543,12 @@ class ObjectTrainer:
             scales = []
 
             REC_batch_size = self.gt_size // 2
+            optimParams.densify_until_iter = int(iters * REC_batch_size * 0.8)
             step_size = 4
             stage_step_rate = min((self.step) / (iters), 1.0)
-            elevation = torch.zeros(
-                self.gt_size, dtype=torch.float32, device=self.device
-            )
+            elevation = torch.zeros(self.gt_size, dtype=torch.float32, device=self.device)
             azimuth = torch.zeros(self.gt_size, dtype=torch.float32, device=self.device)
-            camera_distances = torch.zeros(
-                self.gt_size, dtype=torch.float32, device=self.device
-            )
+            camera_distances = torch.zeros(self.gt_size, dtype=torch.float32, device=self.device)
             if self.gt_images == None:
                 for i in range(self.gt_size):
                     viewpoint_cam = self.viewpoint_cams[i]
@@ -724,31 +651,25 @@ class ObjectTrainer:
                 self.rec_count += 1
 
                 loss.backward()
-                with torch.no_grad():
+                if self.rec_count % 100 == 0:
+                    path = self.eval_renders_path / f"{self.rec_count}.jpg"
+                    self.save_recon_img(path, image, self.gt_images[i])
+                if self.rec_count < optimParams.densify_until_iter:
                     gs_obj.model.max_radii2D[visibility_filter] = torch.max(
                         gs_obj.model.max_radii2D[visibility_filter],
                         radii[visibility_filter],
                     )
-                    gs_obj.model.add_densification_stats(
-                        viewspace_point_tensor, visibility_filter
-                    )
+                    gs_obj.model.add_densification_stats(viewspace_point_tensor, visibility_filter)
                     if self.rec_count % optimParams.densification_interval == 0:
                         pcn_0 = gs_obj.model.get_xyz.shape[0]
-                        size_threshold = (
-                            20
-                            if self.step > optimParams.opacity_reset_interval
-                            else None
-                        )
+                        size_threshold = 20 if self.rec_count > optimParams.opacity_reset_interval else None
                         gs_obj.model.densify_and_prune(
                             optimParams.densify_grad_threshold,
                             0.005,
                             self.renderer.cameras_extent,
                             size_threshold,
                         )
-                        if (
-                            gs_obj.model.get_xyz.shape[0] > optimParams.max_point_number
-                            and self.step < 25
-                        ):
+                        if gs_obj.model.get_xyz.shape[0] > optimParams.max_point_number and self.step < 25:
                             gaussian_filtering(
                                 gs_obj.model,
                                 self.renderer,
@@ -768,8 +689,8 @@ class ObjectTrainer:
                     if self.rec_count % optimParams.opacity_reset_interval == 0:
                         gs_obj.model.reset_opacity()
 
-                    self.optimizer.step()
-                    self.optimizer.zero_grad(set_to_none=True)
+                self.optimizer.step()
+                self.optimizer.zero_grad(set_to_none=True)
 
     def train(self) -> None:
         """traing process"""
@@ -801,21 +722,15 @@ class ObjectTrainer:
             self.video_inference("before_recon", self.gs_obj, self.eval_renders_path)
         # TODO:stage_range 和 jump_range，最好是放进config中
         self.guidance.stage_range = [140, 200]
-        self.guidance.stage_range_step = (
-            self.guidance.stage_range[1] - self.guidance.stage_range[0]
-        )
+        self.guidance.stage_range_step = self.guidance.stage_range[1] - self.guidance.stage_range[0]
         self.guidance.jump_range = [75, 150]
         for i in tqdm.trange(refine_iters):
             if self.step > (i + object_iters):
                 continue
             self.refine_step()
             if (i + 1) % 20 == 0:
-                self.video_inference(
-                    self.step + object_iters, self.gs_obj, self.eval_renders_path
-                )
-        self.video_inference(
-            object_iters + refine_iters, self.gs_obj, self.eval_renders_path
-        )
+                self.video_inference(self.step + object_iters, self.gs_obj, self.eval_renders_path)
+        self.video_inference(object_iters + refine_iters, self.gs_obj, self.eval_renders_path)
         self.save_model("final")
         self.gs_obj.model.free_memory()
         del self.guidance

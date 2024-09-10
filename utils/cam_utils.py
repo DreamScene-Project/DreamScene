@@ -2123,44 +2123,20 @@ class SceneCameraLoader:
         radius_trans_max = min(
             np.abs(self.s_box[0]), np.abs(self.s_box[1]), self.s_box[3], self.s_box[4]
         )
-        # for i in range(4):
-        #     if i == 0:
-        #         radius_trans = (
-        #             -radius_trans_max / 2.0
-        #             + random.random() * radius_trans_max / 10.0
-        #             - radius_trans_max / 20.0
-        #         )
-        #     elif i == 1:
-        #         radius_trans = (
-        #             -radius_trans_max / 4.0
-        #             + random.random() * radius_trans_max / 10.0
-        #             - radius_trans_max / 20.0
-        #         )
-        #     elif i == 2:
-        #         radius_trans = (
-        #             radius_trans_max / 4.0
-        #             + random.random() * radius_trans_max / 10.0
-        #             - radius_trans_max / 20.0
-        #         )
-        #     else:
-        #         radius_trans = (
-        #             radius_trans_max / 2.0
-        #             + random.random() * radius_trans_max / 10.0
-        #             - radius_trans_max / 20.0
-        #         )
-
-        #     trans = np.array(
-        #         [
-        #             radius_trans * np.sin(trans_phis),
-        #             radius_trans * np.cos(trans_phis),
-        #             (self.s_box[5] + self.s_box[2]) * 2.0 / 3.0,
-        #         ]
-        #     )  # + random.random() - 0.5])
-        #     scale = 1.0
-        #     if i <= 1:
-        #         scale *= -1
-        for i in range(2):
+        for i in range(4):
             if i == 0:
+                radius_trans = (
+                    -radius_trans_max / 2.0
+                    + random.random() * radius_trans_max / 10.0
+                    - radius_trans_max / 20.0
+                )
+            elif i == 1:
+                radius_trans = (
+                    -radius_trans_max / 4.0
+                    + random.random() * radius_trans_max / 10.0
+                    - radius_trans_max / 20.0
+                )
+            elif i == 2:
                 radius_trans = (
                     radius_trans_max / 4.0
                     + random.random() * radius_trans_max / 10.0
@@ -2181,6 +2157,8 @@ class SceneCameraLoader:
                 ]
             )  # + random.random() - 0.5])
             scale = 1.0
+            if i <= 1:
+                scale *= -1
             cam_info, scale = GenerateCamerasSceneOutdoor3(
                 self.opt,
                 torch.FloatTensor(trans),
