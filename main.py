@@ -20,5 +20,11 @@ if __name__ == "__main__":
             pg, OmegaConf.load(args.config), OmegaConf.from_cli(extras)
         )
         trainer = ObjectTrainer(cfg)
+    else:
+        pg = OmegaConf.structured(ParamsGroups())
+        cfg = OmegaConf.merge(
+            pg, OmegaConf.load(args.config), OmegaConf.from_cli(extras)
+        )
+        trainer = SceneTrainer(cfg)
 
     trainer.train()
