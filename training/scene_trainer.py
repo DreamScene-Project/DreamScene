@@ -578,6 +578,7 @@ class SceneTrainer:
                 while len(self.scene_cams) < self.scene_cams_max:
                     self.scene_cams += self.cams_loader.Stage2_Outdoor()
                 self.scene_cams_floor = self.scene_cams
+                random.shuffle(self.scene_cams_floor)
             elif self.cam_pose_method == "indoor":
                 while len(self.scene_cams) < self.scene_cams_max:
                     rcc = random.random()
@@ -593,7 +594,6 @@ class SceneTrainer:
                         )
 
             random.shuffle(self.scene_cams)
-            random.shuffle(self.scene_cams_floor)
             self.gt_size = len(self.scene_cams) // 4 * 4
             self.gt_images = None
             self.gt_images_floor = None
