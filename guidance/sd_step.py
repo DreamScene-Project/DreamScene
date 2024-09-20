@@ -1,29 +1,10 @@
-from transformers import CLIPTextModel, CLIPTokenizer, logging
-from diffusers import (
-    StableDiffusionPipeline,
-    DiffusionPipeline,
-    DDPMScheduler,
-    DDIMScheduler,
-    EulerDiscreteScheduler,
-    EulerAncestralDiscreteScheduler,
-    DPMSolverMultistepScheduler,
-    ControlNetModel,
-    DDIMInverseScheduler,
-)
-from diffusers.utils import BaseOutput, deprecate
-
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.transforms as T
-
-from typing import List, Optional, Tuple, Union
 from dataclasses import dataclass
+from typing import Optional, Tuple, Union
 
+import torch
+from diffusers import (DDIMScheduler, DDPMScheduler,
+                       EulerAncestralDiscreteScheduler, EulerDiscreteScheduler)
 from diffusers.utils import BaseOutput
-
-# , randn_tensor
 from diffusers.utils.torch_utils import randn_tensor
 
 

@@ -199,8 +199,8 @@ class GaussianModel:
         self.spatial_lr_scale = 0
         self.setup_functions()
         if gaussian_class == "object":
-            if exp_path == None:
-                raise ValueError(f"Error exp_path")
+            if exp_path is None:
+                raise ValueError("Error exp_path")
             self.init_pcd(initialize_param, exp_path)
         elif gaussian_class == "scene":
             pass
@@ -213,7 +213,7 @@ class GaussianModel:
         elif gaussian_class == "floor":
             self.init_floor_pcd(initialize_param)
         else:
-            raise ValueError(f"Error Gaussian Class")
+            raise ValueError("Error Gaussian Class")
 
     def init_env_pcd(self, initialize_param: dict):
         guided = initialize_param["cam_pose_method"]
@@ -232,7 +232,6 @@ class GaussianModel:
             xyz[num_pts : num_pts * 2, :] = np.stack((boxs[:, 3], ys, zs), axis=1)
             xyz[num_pts * 2 : num_pts * 3, :] = np.stack((xs, boxs[:, 1], zs), axis=1)
             xyz[num_pts * 3 : num_pts * 4, :] = np.stack((xs, boxs[:, 4], zs), axis=1)
-            # xyz[num_pts*4:num_pts*5, :] = np.stack((xs,ys,boxs[:,2]),axis=1)
             xyz[num_pts * 4 :, :] = np.stack((xs, ys, boxs[:, 5]), axis=1)
 
             colors = np.concatenate(
@@ -287,7 +286,6 @@ class GaussianModel:
             )  # + np.random.random((num_pts,6))/10.0-0.05
             xs = np.random.random((num_pts,)) * (scene_box[3] - scene_box[0]) + scene_box[0]
             ys = np.random.random((num_pts,)) * (scene_box[4] - scene_box[1]) + scene_box[1]
-            zs = np.random.random((num_pts,)) * (scene_box[5] - scene_box[2]) + scene_box[2]
             xyz = np.zeros((num_pts, 3))
             xyz[:num_pts, :] = np.stack((xs, ys, boxs[:, 2]), axis=1)
             colors = np.ones((num_pts, 3))
@@ -348,7 +346,7 @@ class GaussianModel:
             else:
                 try:
                     pcd = fetchPly(ply_path)
-                except:
+                except Exception:
                     pcd = None
             self.create_from_pcd(pcd, True, 1)
 
@@ -373,7 +371,7 @@ class GaussianModel:
             else:
                 try:
                     pcd = fetchPly(ply_path)
-                except:
+                except Exception:
                     pcd = None
             self.create_from_pcd(pcd, True, 10)
 
@@ -411,7 +409,7 @@ class GaussianModel:
             else:
                 try:
                     pcd = fetchPly(ply_path)
-                except:
+                except Exception:
                     pcd = None
             self.create_from_pcd(pcd, True, 1)
 

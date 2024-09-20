@@ -847,10 +847,7 @@ def GenerateCamerasSceneOutdoor1(
     phi_range_=None,
     SSAA=True,
 ):
-    radius_trans_max = min(
-        np.abs(scene_box[0]), np.abs(-scene_box[1]), scene_box[3], scene_box[4]
-    )
-    if phi_range_ == None:
+    if phi_range_ is None:
         phi_range_ = opt.phi_range
     radius_range_ = [0.1, 0.5]
     theta_range_ = [80, 110]  # opt.theta_range
@@ -923,7 +920,7 @@ def GenerateCamerasSceneIndoor1(
     radius_trans_max = min(
         np.abs(scene_box[0]), np.abs(-scene_box[1]), scene_box[3], scene_box[4]
     )
-    if phi_range_ == None:
+    if phi_range_ is None:
         phi_range_ = opt.phi_range
     radius_range_ = [radius_trans_max * 0.75, radius_trans_max * 1.1]
     theta_range_ = [75, 115]
@@ -998,11 +995,11 @@ def GenerateCamerasSceneIndoor2(
     get_cam_outview_ratio=0,
     SSAA=True,
 ):
-    if phi_range_ == None:
+    if phi_range_ is None:
         phi_range_ = opt.phi_range
 
     radius_range_ = [0.1, 1.0]
-    if max_radius != None:
+    if max_radius is not None:
         radius_range_ = [3.0, max(max_radius, 3.0)]
 
     theta_range_ = [60, 110]
@@ -1561,7 +1558,7 @@ def GenerateCircleCamerasInScene(
     elif mode=="nearby":
         fov = 0.96  # opt.default_fovy
         radius = 0.1  # 1.0
-        if end_phi != None:
+        if end_phi is not None:
             if end_phi < start_phi:
                 end_phi += 360
 
@@ -1569,7 +1566,7 @@ def GenerateCircleCamerasInScene(
     # generate specific data structure
     for idx in range(size):
         thetas = torch.FloatTensor([opt.default_polar])
-        if mode=="nearby" and end_phi != None:
+        if mode=="nearby" and end_phi is not None:
             if ((idx / size) * 360 + start_phi) > end_phi:
                 break
         phis = torch.FloatTensor([((idx / size) * 360 + start_phi) % 360])
@@ -1586,7 +1583,7 @@ def GenerateCircleCamerasInScene(
             angle_overhead=opt.angle_overhead,
             angle_front=opt.angle_front,
         )
-        if res == False:
+        if not res:
             continue
         matrix = np.linalg.inv(poses[0])
         R = -np.transpose(matrix[:3, :3])
@@ -1633,7 +1630,7 @@ def GenerateCircleCamerasInScene(
                 angle_overhead=opt.angle_overhead,
                 angle_front=opt.angle_front,
             )
-            if res == False:
+            if not res:
                 continue
             matrix = np.linalg.inv(poses[0])
             R = -np.transpose(matrix[:3, :3])
@@ -1701,7 +1698,7 @@ def GenerateCircleCamerasInSceneFaraway(
             angle_overhead=opt.angle_overhead,
             angle_front=opt.angle_front,
         )
-        if res == False:
+        if not res:
             continue
         matrix = np.linalg.inv(poses[0])
         R = -np.transpose(matrix[:3, :3])
@@ -2307,8 +2304,8 @@ class SceneCameraLoader:
                 )
                 cam_infos.append(cam_info)
                 scales.append(scale)
-            except:
-                print("单角度采样失败")
+            except Exception:
+                print("camera sampling failure [single angle]")
         camera_list = []
         for cam_info, scale in zip(cam_infos, scales):
             camera_list.append(
@@ -2343,7 +2340,7 @@ class SceneCameraLoader:
         radius_trans_max = min(
             np.abs(self.s_box[0]), np.abs(-self.s_box[1]), self.s_box[3], self.s_box[4]
         )
-        if affine_params != None:
+        if affine_params is not None:
             if len(affine_params["S"] == 3):
                 diff_z = affine_params["S"][2].numpy() / 2.0 + random.random() - 0.5
             else:
@@ -2485,7 +2482,7 @@ class SceneCameraLoader:
         render45=True,
     ):
         SSAA = False
-        if affine_params == None:
+        if affine_params is None:
             trans = np.array([0, 0, (self.s_box[5] + self.s_box[2]) / 2.0])
             trans_45 = np.array([0, 0, self.s_box[2]])
             scale = 1.0
@@ -2545,7 +2542,7 @@ class SceneCameraLoader:
         render45=True,
     ):
         SSAA = False
-        if affine_params == None:
+        if affine_params is None:
             trans = np.array([0, 0, (self.s_box[5] + self.s_box[2]) / 2.0])
             trans_45 = np.array([0, 0, self.s_box[2]])
             scale = 1.0
@@ -2600,7 +2597,7 @@ class SceneCameraLoader:
         render45=True,
     ):
         SSAA = False
-        if affine_params == None:
+        if affine_params is None:
             trans = np.array([0, 0, (self.s_box[5] + self.s_box[2]) / 2.0])
             trans_45 = np.array([0, 0, self.s_box[2]])
             if self.c_method == "indoor":

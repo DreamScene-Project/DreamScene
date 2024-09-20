@@ -103,8 +103,9 @@ class SceneGaussian(GaussianModel):
         else:
             exp_path = Path("experiments/") / self.cfg.log.exp_name
             load_ckpt = True
+            # FIXME: 从配置文件中读取是否加载ckpt
             object_gaussian = 0
-            if load_ckpt == True:
+            if load_ckpt:
                 object_gaussian = self.ckpt_checker(exp_path, id, objectParams)
             if object_gaussian == 0:
                 object_gaussian = ObjectGaussian(
@@ -155,7 +156,8 @@ class SceneGaussian(GaussianModel):
             else:
                 exp_path = Path("experiments/") / self.cfg.log.exp_name
                 load_ckpt = True
-                if load_ckpt == True:
+                # FIXME: 从配置文件中读取是否加载ckpt
+                if load_ckpt:
                     object_gaussian = self.ckpt_checker(
                         exp_path, object_in_scene.id, object_in_scene
                     )
@@ -184,6 +186,7 @@ class SceneGaussian(GaussianModel):
         scene_cfg = self.cfg.scene_configs.scene
         logger.debug(f"Start Init: scene_name: {scene_cfg.scene_name}")
         exp_path = Path("experiments/") / self.cfg.log.exp_name
+        # FIXME: 从配置文件中读取是否加载ckpt
         load_ckpt = True
         logger.debug(f"Create New Scene {scene_cfg.scene_name}")
         self.scene_box = torch.zeros(6).cuda()
@@ -191,7 +194,7 @@ class SceneGaussian(GaussianModel):
         self.add_objects_to_scene(scene_cfg, exp_path)
         self.env_gaussian.training_setup(self.cfg.sceneOptimizationParams)
         self.floor_gaussian.training_setup(self.cfg.sceneOptimizationParams)
-        if load_ckpt == True:
+        if load_ckpt:
             scene_ckpt_path = exp_path / "scene_checkpoints"
             ckpt_list = os.listdir(scene_ckpt_path)
             stage_restore = 0
@@ -542,8 +545,8 @@ class SceneGaussian(GaussianModel):
         )
         try:
             screenspace_points.retain_grad()
-        except:
-            pass
+        except Exception as e:
+            logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)
@@ -682,8 +685,8 @@ class SceneGaussian(GaussianModel):
 
         try:
             screenspace_points.retain_grad()
-        except:
-            pass
+        except Exception as e:
+            logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)
@@ -702,36 +705,20 @@ class SceneGaussian(GaussianModel):
         # Set up rasterization configuration
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-        try:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                score_flag=False,
-            )
-        except TypeError as e:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                debug=False,
-            )
+        raster_settings = GaussianRasterizationSettings(
+            image_height=int(viewpoint_camera.image_height),
+            image_width=int(viewpoint_camera.image_width),
+            tanfovx=tanfovx,
+            tanfovy=tanfovy,
+            bg=bg_color,
+            scale_modifier=scaling_modifier,
+            viewmatrix=viewpoint_camera.world_view_transform,
+            projmatrix=viewpoint_camera.full_proj_transform,
+            sh_degree=act_SH,
+            campos=viewpoint_camera.camera_center,
+            prefiltered=False,
+            score_flag=False,
+        )
 
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         means3D = torch.cat(
@@ -910,8 +897,8 @@ class SceneGaussian(GaussianModel):
         )
         try:
             screenspace_points.retain_grad()
-        except:
-            pass
+        except Exception as e:
+            logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)
@@ -929,36 +916,20 @@ class SceneGaussian(GaussianModel):
 
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-        try:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                score_flag=False,
-            )
-        except TypeError as e:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                debug=False,
-            )
+        raster_settings = GaussianRasterizationSettings(
+            image_height=int(viewpoint_camera.image_height),
+            image_width=int(viewpoint_camera.image_width),
+            tanfovx=tanfovx,
+            tanfovy=tanfovy,
+            bg=bg_color,
+            scale_modifier=scaling_modifier,
+            viewmatrix=viewpoint_camera.world_view_transform,
+            projmatrix=viewpoint_camera.full_proj_transform,
+            sh_degree=act_SH,
+            campos=viewpoint_camera.camera_center,
+            prefiltered=False,
+            score_flag=False,
+        )
 
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
@@ -1068,7 +1039,7 @@ def prune_list(
     viewpoint_cams = loadSphereCam(pose_args)
     for viewpoint_cam in viewpoint_cams:
         render_pkg = renderer.score_render(object_gs, viewpoint_cam, bg_color)
-        if imp_list == None:
+        if imp_list is None:
             imp_list = render_pkg["important_score"]
         else:
             imp_list += render_pkg["important_score"].detach()
