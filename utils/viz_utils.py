@@ -4,7 +4,7 @@ import torch
 
 
 def lat2rgb(x, rgb_latent_factors):
-    torch.clip(
+    return torch.clip(
         (x.permute(0, 2, 3, 1) @ rgb_latent_factors.to(x.dtype)).permute(0, 3, 1, 2),
         0.0,
         1.0,
@@ -21,9 +21,10 @@ def rgb2sat(img, T=None):
 
 
 class TextCanvas:
-    def __init__(self):
+    def __init__(self, device):
         self.text = np.zeros((512, 512 * 4, 3))
         self.text_line = 1
+        self.device = device
 
     def putText(self, content):
         cv2.putText(

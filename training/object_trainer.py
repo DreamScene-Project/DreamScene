@@ -552,7 +552,6 @@ class ObjectTrainer:
             if self.gt_images is None:
                 for i in range(self.gt_size):
                     viewpoint_cam = self.viewpoint_cams[i]
-                    # 获得相机视点
                     # viewpoint_cam
                     elevation[i] = viewpoint_cam.delta_polar.item()
                     azimuth[i] = viewpoint_cam.delta_azimuth.item()  # [-180, 180]

@@ -103,7 +103,7 @@ class SceneGaussian(GaussianModel):
         else:
             exp_path = Path("experiments/") / self.cfg.log.exp_name
             load_ckpt = True
-            # FIXME: 从配置文件中读取是否加载ckpt
+
             object_gaussian = 0
             if load_ckpt:
                 object_gaussian = self.ckpt_checker(exp_path, id, objectParams)
@@ -156,7 +156,7 @@ class SceneGaussian(GaussianModel):
             else:
                 exp_path = Path("experiments/") / self.cfg.log.exp_name
                 load_ckpt = True
-                # FIXME: 从配置文件中读取是否加载ckpt
+
                 if load_ckpt:
                     object_gaussian = self.ckpt_checker(
                         exp_path, object_in_scene.id, object_in_scene
@@ -186,7 +186,7 @@ class SceneGaussian(GaussianModel):
         scene_cfg = self.cfg.scene_configs.scene
         logger.debug(f"Start Init: scene_name: {scene_cfg.scene_name}")
         exp_path = Path("experiments/") / self.cfg.log.exp_name
-        # FIXME: 从配置文件中读取是否加载ckpt
+
         load_ckpt = True
         logger.debug(f"Create New Scene {scene_cfg.scene_name}")
         self.scene_box = torch.zeros(6).cuda()
@@ -515,6 +515,33 @@ class SceneGaussian(GaussianModel):
     def create_transform_matrix_T(self, translation):
         translation_matrix = torch.Tensor(translation).float().cuda()
         return translation_matrix
+
+    def final_combine_all(self):
+        # Combine all objects and scene into a GaussianModel
+        tmp = {"_xyz":[], "_features_dc":[], "_features_rest":[], "_scaling":[], "_rotation":[], "_opacity":[], "max_radii2D":[], "xyz_gradient_accum":[], "denom":[]}
+        max_sh_degree = 0
+        for gs_obj in self.gaussians_collection.keys():
+            tmp["_xyz"].append(self.gaussians_collection[gs_obj].model._xyz.detach())
+            tmp["_features_dc"].append(self.gaussians_collection[gs_obj].model._features_dc.detach())
+            tmp["_features_rest"].append(self.gaussians_collection[gs_obj].model._features_rest.detach())
+            tmp["_scaling"].append(self.gaussians_collection[gs_obj].model._scaling.detach())
+            tmp["_rotation"].append(self.gaussians_collection[gs_obj].model._rotation.detach())
+            tmp["_opacity"].append(self.gaussians_collection[gs_obj].model._opacity.detach())
+            tmp["max_radii2D"].append(self.gaussians_collection[gs_obj].model.max_radii2D.detach())
+            tmp["xyz_gradient_accum"].append(self.gaussians_collection[gs_obj].model.xyz_gradient_accum.detach())
+            tmp["denom"].append(self.gaussians_collection[gs_obj].model.denom.detach())
+            max_sh_degree = max(max_sh_degree, self.gaussians_collection[gs_obj].model.max_sh_degree)
+        final_gs = GaussianModel({"sh_degree":max_sh_degree}, "scene")
+        final_gs.model._xyz = torch.cat(tmp["_xyz"])
+        final_gs.model._features_dc = torch.cat(tmp["_features_dc"])
+        final_gs.model._features_rest = torch.cat(tmp["_features_rest"])
+        final_gs.model._scaling = torch.cat(tmp["_scaling"])
+        final_gs.model._rotation = torch.cat(tmp["_rotation"])
+        final_gs.model._opacity = torch.cat(tmp["_opacity"])
+        final_gs.model.max_radii2D = torch.cat(tmp["max_radii2D"])
+        final_gs.model.xyz_gradient_accum = torch.cat(tmp["xyz_gradient_accum"])
+        final_gs.model.denom = torch.cat(tmp["denom"])
+        return final_gs
 
     def score_render(
         self,

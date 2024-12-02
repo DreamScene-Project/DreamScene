@@ -677,6 +677,12 @@ class SceneTrainer:
             only_env=False,
             render_size=len(self.scene_cams),
         )
+        # Combine all objects and scene into a GaussianModel to save it.
+        with torch.no_grad():
+            final_gs = self.renderer.final_combine_all()
+            final_path = self.scene_ckpt_path / f"scene_final_model.ply"
+            final_gs.save_ply(final_path)
+            logger.debug(f"[INFO] save final ply model to {final_path}.")
 
     def prepare_scene_cams(self):
         viewpoint_cams = []

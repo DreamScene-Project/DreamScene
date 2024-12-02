@@ -289,7 +289,7 @@ class StableDiffusion(nn.Module):
         loss = SpecifyGradient.apply(latents, grad)
 
         if iteration % guidance_opt.vis_interval == 0:
-            eta_text = TextCanvas()
+            eta_text = TextCanvas(self.device)
             eta_text.putText("vds=" + ", ".join(vds))
             eta_text.putText(f"max_step={max_step},t_list=" + ",".join(t_list))
 
@@ -436,7 +436,7 @@ class StableDiffusion(nn.Module):
             t_cols.append(self.timesteps[cur_ind_t])
             eps_t_cols.append(pred_noise)
             prev_latents_noisy_cols.append(cur_noisy_lat)
-        eta_text = TextCanvas()
+        eta_text = TextCanvas(self.device)
         eta_text.putText("vds=" + ", ".join(vds))
         eta_text.putText(f"max_step={max_step},t_list=" + ",".join(t_list))
 
