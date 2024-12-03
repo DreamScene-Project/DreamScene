@@ -1,8 +1,7 @@
 import os
 from pathlib import Path
+from typing import Tuple
 
-import cv2
-import numpy as np
 import omegaconf
 import torch
 import torch.nn as nn
@@ -14,18 +13,11 @@ from torch.cuda.amp import custom_bwd, custom_fwd
 from torchvision.utils import save_image
 from transformers import logging
 
-from .sd_step import *
+from utils.viz_utils import TextCanvas, lat2rgb, rgb2sat
+
+from .sd_step import ddim_step, pred_original
 
 logging.set_verbosity_error()
-
-
-def rgb2sat(img, T=None):
-    max_ = torch.max(img, dim=1, keepdim=True).values + 1e-5
-    min_ = torch.min(img, dim=1, keepdim=True).values
-    sat = (max_ - min_) / max_
-    if T is not None:
-        sat = (1 - T) * sat
-    return sat
 
 
 class SpecifyGradient(torch.autograd.Function):
@@ -73,9 +65,7 @@ class StableDiffusion(nn.Module):
 
         is_safe_tensor = guidance_opt.is_safe_tensor
         base_model_key = (
-            "stabilityai/stable-diffusion-v1-5"
-            if guidance_opt.base_model_key is None
-            else guidance_opt.base_model_key
+            "stabilityai/stable-diffusion-v1-5" if guidance_opt.base_model_key is None else guidance_opt.base_model_key
         )  # for finetuned model only
 
         if is_safe_tensor:
@@ -86,9 +76,7 @@ class StableDiffusion(nn.Module):
                 load_safety_checker=False,
             )
         else:
-            pipe = StableDiffusionPipeline.from_pretrained(
-                model_key, torch_dtype=self.precision_t
-            )
+            pipe = StableDiffusionPipeline.from_pretrained(model_key, torch_dtype=self.precision_t)
 
         self.scheduler = DDIMScheduler.from_pretrained(
             model_key if not is_safe_tensor else base_model_key,
@@ -124,9 +112,7 @@ class StableDiffusion(nn.Module):
         self.unet = pipe.unet
 
         self.num_train_timesteps = (
-            num_train_timesteps
-            if num_train_timesteps is not None
-            else self.scheduler.config.num_train_timesteps
+            num_train_timesteps if num_train_timesteps is not None else self.scheduler.config.num_train_timesteps
         )
         self.scheduler.set_timesteps(self.num_train_timesteps, device=device)
 
@@ -208,16 +194,10 @@ class StableDiffusion(nn.Module):
         obj_id: str = "",
     ):
 
-        pred_rgb, pred_depth, pred_alpha = self.augmentation(
-            pred_rgb, pred_depth, pred_alpha
-        )
+        pred_rgb, pred_depth, pred_alpha = self.augmentation(pred_rgb, pred_depth, pred_alpha)
 
-        B = pred_rgb.shape[0]
-        K = text_embeddings_all.shape[0] - 1
         if as_latent:
-            latents, _ = self.encode_imgs(
-                pred_depth.repeat(1, 3, 1, 1).to(self.precision_t)
-            )
+            latents, _ = self.encode_imgs(pred_depth.repeat(1, 3, 1, 1).to(self.precision_t))
         else:
             latents, _ = self.encode_imgs(pred_rgb.to(self.precision_t))
         # timestep ~ U(0.02, 0.98) to avoid very high/low noise level
@@ -233,9 +213,7 @@ class StableDiffusion(nn.Module):
                 dtype=latents.dtype,
                 device=latents.device,
                 generator=self.noise_gen,
-            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(
-                latents.shape[0], 1, 1, 1
-            )
+            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(latents.shape[0], 1, 1, 1)
 
         if guidance_opt.fix_noise:
             noise = self.noise_temp
@@ -250,9 +228,7 @@ class StableDiffusion(nn.Module):
                 dtype=latents.dtype,
                 device=latents.device,
                 generator=self.noise_gen,
-            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(
-                latents.shape[0], 1, 1, 1
-            )
+            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(latents.shape[0], 1, 1, 1)
 
         text_embeddings_all = text_embeddings_all[:, :, ...]
         text_embeddings_all = text_embeddings_all.reshape(
@@ -313,35 +289,10 @@ class StableDiffusion(nn.Module):
         loss = SpecifyGradient.apply(latents, grad)
 
         if iteration % guidance_opt.vis_interval == 0:
-            eta_text = np.zeros((512, 512 * 4, 3))
-            eta_text_line = 1
-            cv2.putText(
-                eta_text,
-                "vds=" + ", ".join(vds),
-                (8, 48 * eta_text_line),
-                cv2.FONT_HERSHEY_COMPLEX,
-                1.5,
-                (255, 255, 255),
-                2,
-            )
-            eta_text_line += 1
-            cv2.putText(
-                eta_text,
-                f"max_step={max_step},t_list=" + ",".join(t_list),
-                (8, 48 * eta_text_line),
-                cv2.FONT_HERSHEY_COMPLEX,
-                1.5,
-                (255, 255, 255),
-                2,
-            )
-            eta_text_line += 1
-            lat2rgb = lambda x: torch.clip(
-                (x.permute(0, 2, 3, 1) @ self.rgb_latent_factors.to(x.dtype)).permute(
-                    0, 3, 1, 2
-                ),
-                0.0,
-                1.0,
-            )
+            eta_text = TextCanvas(self.device)
+            eta_text.putText("vds=" + ", ".join(vds))
+            eta_text.putText(f"max_step={max_step},t_list=" + ",".join(t_list))
+
             save_path_iter = os.path.join(
                 save_folder,
                 "{}_iter_{}_step_vd_{}.jpg".format(obj_id, iteration, "_".join(vds)),
@@ -350,14 +301,10 @@ class StableDiffusion(nn.Module):
             with torch.no_grad():
                 pred_x0_pos_cols = []
 
-                for t_, eps_t_, prev_latents_noisy_ in zip(
-                    t_cols, eps_t_cols, prev_latents_noisy_cols
-                ):
+                for t_, eps_t_, prev_latents_noisy_ in zip(t_cols, eps_t_cols, prev_latents_noisy_cols):
                     pred_x0_pos_cols.append(
                         self.decode_latents(
-                            pred_original(
-                                self.scheduler, eps_t_, t_, prev_latents_noisy_
-                            ).type(self.precision_t)
+                            pred_original(self.scheduler, eps_t_, t_, prev_latents_noisy_).type(self.precision_t)
                         )
                     )
 
@@ -369,7 +316,7 @@ class StableDiffusion(nn.Module):
                     align_corners=False,
                 ).repeat(1, 3, 1, 1)
                 latents_rgb = F.interpolate(
-                    lat2rgb(latents),
+                    lat2rgb(latents, self.rgb_latent_factors),
                     (resolution[0], resolution[1]),
                     mode="bilinear",
                     align_corners=False,
@@ -384,18 +331,7 @@ class StableDiffusion(nn.Module):
                         norm_grad,
                     ]
                     + pred_x0_pos_cols
-                    + [
-                        torch.from_numpy(eta_text / 255.0)
-                        .clip(0.0, 1.0)
-                        .to(self.device)
-                        .reshape(
-                            512,
-                            4,
-                            512,
-                            3,
-                        )
-                        .permute(1, 3, 0, 2)
-                    ],
+                    + [eta_text.toImage()],
                     dim=0,
                 )
                 save_image(viz_images, save_path_iter)
@@ -420,13 +356,8 @@ class StableDiffusion(nn.Module):
         gid=0,
     ):
 
-        B = pred_rgb.shape[0]
-        K = text_embeddings_all.shape[0] - 1
-
         if as_latent:
-            latents, _ = self.encode_imgs(
-                pred_depth.repeat(1, 3, 1, 1).to(self.precision_t)
-            )
+            latents, _ = self.encode_imgs(pred_depth.repeat(1, 3, 1, 1).to(self.precision_t))
         else:
             latents, _ = self.encode_imgs(pred_rgb.to(self.precision_t))
 
@@ -441,9 +372,7 @@ class StableDiffusion(nn.Module):
                 dtype=latents.dtype,
                 device=latents.device,
                 generator=self.noise_gen,
-            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(
-                latents.shape[0], 1, 1, 1
-            )
+            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(latents.shape[0], 1, 1, 1)
 
         if guidance_opt.fix_noise:
             noise = self.noise_temp
@@ -458,9 +387,7 @@ class StableDiffusion(nn.Module):
                 dtype=latents.dtype,
                 device=latents.device,
                 generator=self.noise_gen,
-            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(
-                latents.shape[0], 1, 1, 1
-            )
+            ) + 0.1 * torch.randn((1, 4, 1, 1), device=latents.device).repeat(latents.shape[0], 1, 1, 1)
 
         text_embeddings_all = text_embeddings_all[:, :, ...]
         text_embeddings_all = text_embeddings_all.reshape(
@@ -471,18 +398,14 @@ class StableDiffusion(nn.Module):
 
         jump_min = self.jump_range[0]
         jump_max = self.jump_range[1]
-        max_step = self.stage_range[1] - int(
-            self.stage_range_step * stage_step_rate
-        )
+        max_step = self.stage_range[1] - int(self.stage_range_step * stage_step_rate)
         rand_list = []
         for i in range(4):
             rand_jump = torch.randint(jump_min, jump_max, (1,))[0].to(self.device)
             if not rand_list:
                 rand_list.append(rand_jump)
             elif (rand_list[-1] + rand_jump) < max_step:
-                rand_list.append(
-                    rand_list[-1] + rand_jump
-                )
+                rand_list.append(rand_list[-1] + rand_jump)
             else:
                 break
 
@@ -513,65 +436,32 @@ class StableDiffusion(nn.Module):
             t_cols.append(self.timesteps[cur_ind_t])
             eps_t_cols.append(pred_noise)
             prev_latents_noisy_cols.append(cur_noisy_lat)
-        eta_text = np.zeros((512, 512 * 4, 3))
-        eta_text_line = 1
-        cv2.putText(
-            eta_text,
-            "vds=" + ", ".join(vds),
-            (8, 48 * eta_text_line),
-            cv2.FONT_HERSHEY_COMPLEX,
-            1.5,
-            (255, 255, 255),
-            2,
-        )
-        eta_text_line += 1
-        cv2.putText(
-            eta_text,
-            f"max_step={max_step},t_list=" + ",".join(t_list),
-            (8, 48 * eta_text_line),
-            cv2.FONT_HERSHEY_COMPLEX,
-            1.5,
-            (255, 255, 255),
-            2,
-        )
-        eta_text_line += 1
-        lat2rgb = lambda x: torch.clip(
-            (x.permute(0, 2, 3, 1) @ self.rgb_latent_factors.to(x.dtype)).permute(
-                0, 3, 1, 2
-            ),
-            0.0,
-            1.0,
-        )
+        eta_text = TextCanvas(self.device)
+        eta_text.putText("vds=" + ", ".join(vds))
+        eta_text.putText(f"max_step={max_step},t_list=" + ",".join(t_list))
+
         save_path_iter = os.path.join(
             save_folder,
-            "{}_iter_{}_step_gid_{}_vd_{}.jpg".format(
-                obj_id, iteration, gid, "_".join(vds)
-            ),
+            "{}_iter_{}_step_gid_{}_vd_{}.jpg".format(obj_id, iteration, gid, "_".join(vds)),
         )
         gt_images = None
         with torch.no_grad():
             pred_x0_pos_cols = []
-            for t_, eps_t_, prev_latents_noisy_ in zip(
-                t_cols, eps_t_cols, prev_latents_noisy_cols
-            ):
-                if gt_images == None:
+            for t_, eps_t_, prev_latents_noisy_ in zip(t_cols, eps_t_cols, prev_latents_noisy_cols):
+                if gt_images is None:
                     gt_images = self.decode_latents(
-                        pred_original(
-                            self.scheduler, eps_t_, t_, prev_latents_noisy_
-                        ).type(self.precision_t)
+                        pred_original(self.scheduler, eps_t_, t_, prev_latents_noisy_).type(self.precision_t)
                     )
                     pred_x0_pos_cols.append(gt_images)
                 else:
                     pred_x0_pos_cols.append(
                         self.decode_latents(
-                            pred_original(
-                                self.scheduler, eps_t_, t_, prev_latents_noisy_
-                            ).type(self.precision_t)
+                            pred_original(self.scheduler, eps_t_, t_, prev_latents_noisy_).type(self.precision_t)
                         )
                     )
 
             latents_rgb = F.interpolate(
-                lat2rgb(latents),
+                lat2rgb(latents, self.rgb_latent_factors),
                 (resolution[0], resolution[1]),
                 mode="bilinear",
                 align_corners=False,
@@ -586,18 +476,7 @@ class StableDiffusion(nn.Module):
                     latents_rgb,
                 ]
                 + pred_x0_pos_cols
-                + [
-                    torch.from_numpy(eta_text / 255.0)
-                    .clip(0.0, 1.0)
-                    .to(self.device)
-                    .reshape(
-                        512,
-                        4,
-                        512,
-                        3,
-                    )
-                    .permute(1, 3, 0, 2)
-                ],
+                + [eta_text.toImage()],
                 dim=0,
             )
             save_image(viz_images, save_path_iter)
@@ -615,28 +494,24 @@ class StableDiffusion(nn.Module):
         resolution=(512, 512),
         eta=0.0,
         pred_with_uncond=True,
-    ):  
-        """We use DDIM Inversion folloing LucidDreamer here to keep 3D consistency """
+    ):
+        """We use DDIM Inversion folloing LucidDreamer here to keep 3D consistency"""
         text_embeddings = text_embeddings.to(self.precision_t)
         unet = self.unet
         ind_prev_t = torch.zeros(1, dtype=torch.long, device=self.device)[0]
         if is_noisy_latent:
             prev_noisy_lat = latents
         else:
-            prev_noisy_lat = self.scheduler.add_noise(
-                latents, noise, self.timesteps[ind_prev_t]
-            )
+            prev_noisy_lat = self.scheduler.add_noise(latents, noise, self.timesteps[ind_prev_t])
         cur_ind_t = ind_prev_t
         cur_noisy_lat = prev_noisy_lat
         pred_scores = []
-        
+
         for next_ind_t in rand_list:
-            cur_noisy_lat_ = self.scheduler.scale_model_input(
-                cur_noisy_lat, self.timesteps[cur_ind_t]
-            ).to(self.precision_t)
-            latent_model_input = torch.cat(
-                [cur_noisy_lat_, cur_noisy_lat_, cur_noisy_lat_]
+            cur_noisy_lat_ = self.scheduler.scale_model_input(cur_noisy_lat, self.timesteps[cur_ind_t]).to(
+                self.precision_t
             )
+            latent_model_input = torch.cat([cur_noisy_lat_, cur_noisy_lat_, cur_noisy_lat_])
             latent_model_input = latent_model_input.reshape(
                 -1,
                 4,
@@ -644,10 +519,7 @@ class StableDiffusion(nn.Module):
                 resolution[1] // 8,
             )
             timestep_model_input = (
-                self.timesteps[cur_ind_t]
-                .reshape(1, 1)
-                .repeat(latent_model_input.shape[0], 1)
-                .reshape(-1)
+                self.timesteps[cur_ind_t].reshape(1, 1).repeat(latent_model_input.shape[0], 1).reshape(-1)
             )
             unet_output = unet(
                 latent_model_input,
@@ -664,9 +536,7 @@ class StableDiffusion(nn.Module):
             cur_ind_t = next_ind_t
             del unet_output
 
-        cur_noisy_lat_ = self.scheduler.scale_model_input(
-            cur_noisy_lat, self.timesteps[cur_ind_t]
-        ).to(self.precision_t)
+        cur_noisy_lat_ = self.scheduler.scale_model_input(cur_noisy_lat, self.timesteps[cur_ind_t]).to(self.precision_t)
         latent_model_input = torch.cat([cur_noisy_lat_, cur_noisy_lat_, cur_noisy_lat_])
         latent_model_input = latent_model_input.reshape(
             -1,
@@ -675,10 +545,7 @@ class StableDiffusion(nn.Module):
             resolution[1] // 8,
         )
         timestep_model_input = (
-            self.timesteps[cur_ind_t]
-            .reshape(1, 1)
-            .repeat(latent_model_input.shape[0], 1)
-            .reshape(-1)
+            self.timesteps[cur_ind_t].reshape(1, 1).repeat(latent_model_input.shape[0], 1).reshape(-1)
         )
         unet_output = unet(
             latent_model_input,
@@ -703,27 +570,19 @@ class StableDiffusion(nn.Module):
     ):
         text_embeddings = text_embeddings.to(self.precision_t)
         unet = self.unet
-        ind_prev_t = rand_list[
-            0
-        ]
+        ind_prev_t = rand_list[0]
         if is_noisy_latent:
             prev_noisy_lat = latents
         else:
-            prev_noisy_lat = self.scheduler.add_noise(
-                latents, noise, self.timesteps[ind_prev_t]
-            )
+            prev_noisy_lat = self.scheduler.add_noise(latents, noise, self.timesteps[ind_prev_t])
         cur_ind_t = ind_prev_t
         cur_noisy_lat = prev_noisy_lat
         pred_scores = []
         for next_ind_t in rand_list:
-            cur_noisy_lat_ = self.scheduler.scale_model_input(
-                cur_noisy_lat, self.timesteps[cur_ind_t]
-            ).to(
+            cur_noisy_lat_ = self.scheduler.scale_model_input(cur_noisy_lat, self.timesteps[cur_ind_t]).to(
                 self.precision_t
             )
-            latent_model_input = torch.cat(
-                [cur_noisy_lat_, cur_noisy_lat_, cur_noisy_lat_]
-            )
+            latent_model_input = torch.cat([cur_noisy_lat_, cur_noisy_lat_, cur_noisy_lat_])
             latent_model_input = latent_model_input.reshape(
                 -1,
                 4,
@@ -731,10 +590,7 @@ class StableDiffusion(nn.Module):
                 resolution[1] // 8,
             )
             timestep_model_input = (
-                self.timesteps[cur_ind_t]
-                .reshape(1, 1)
-                .repeat(latent_model_input.shape[0], 1)
-                .reshape(-1)
+                self.timesteps[cur_ind_t].reshape(1, 1).repeat(latent_model_input.shape[0], 1).reshape(-1)
             )
             unet_output = unet(
                 latent_model_input,
@@ -742,26 +598,16 @@ class StableDiffusion(nn.Module):
                 encoder_hidden_states=text_embeddings,
             ).sample
             cond, uncond, blank = torch.chunk(unet_output, chunks=3)
-            pred_scores.append(
-                (cur_ind_t, unet_output, cur_noisy_lat)
-            )
+            pred_scores.append((cur_ind_t, unet_output, cur_noisy_lat))
             pred_noise = uncond + cfg * (cond - uncond)
             cur_t, next_t = self.timesteps[cur_ind_t], self.timesteps[next_ind_t]
             delta_t_ = next_t - cur_t
             print(f"DeNoise From {cur_t} to {next_t}")
-            cur_noisy_lat = self.sche_func(
-                self.scheduler, pred_noise, cur_t, cur_noisy_lat, -delta_t_, eta
-            ).prev_sample
+            cur_noisy_lat = self.sche_func(self.scheduler, pred_noise, cur_t, cur_noisy_lat, -delta_t_, eta).prev_sample
             cur_ind_t = next_ind_t
             del unet_output
-        cur_noisy_lat_ = self.scheduler.scale_model_input(
-            cur_noisy_lat, self.timesteps[cur_ind_t]
-        ).to(
-            self.precision_t
-        )
-        latent_model_input = torch.cat(
-            [cur_noisy_lat_, cur_noisy_lat_, cur_noisy_lat_]
-        )
+        cur_noisy_lat_ = self.scheduler.scale_model_input(cur_noisy_lat, self.timesteps[cur_ind_t]).to(self.precision_t)
+        latent_model_input = torch.cat([cur_noisy_lat_, cur_noisy_lat_, cur_noisy_lat_])
         latent_model_input = latent_model_input.reshape(
             -1,
             4,
@@ -769,10 +615,7 @@ class StableDiffusion(nn.Module):
             resolution[1] // 8,
         )
         timestep_model_input = (
-            self.timesteps[cur_ind_t]
-            .reshape(1, 1)
-            .repeat(latent_model_input.shape[0], 1)
-            .reshape(-1)
+            self.timesteps[cur_ind_t].reshape(1, 1).repeat(latent_model_input.shape[0], 1).reshape(-1)
         )
         unet_output = unet(
             latent_model_input,
@@ -780,9 +623,7 @@ class StableDiffusion(nn.Module):
             encoder_hidden_states=text_embeddings,
         ).sample
         cond, uncond, blank = torch.chunk(unet_output, chunks=3)
-        pred_scores.append(
-            (cur_ind_t, unet_output, cur_noisy_lat)
-        )
+        pred_scores.append((cur_ind_t, unet_output, cur_noisy_lat))
         torch.cuda.empty_cache()
         return pred_scores
 

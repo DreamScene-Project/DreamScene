@@ -72,7 +72,7 @@ class SceneTrainer:
     def seed_everything(self):
         try:
             seed = int(self.seed)
-        except:
+        except Exception:
             seed = np.random.randint(0, 1000000)
 
         os.environ["PYTHONHASHSEED"] = str(seed)
@@ -110,7 +110,7 @@ class SceneTrainer:
         self.cam_pose_method = self.cfg.scene_configs.scene.cam_pose_method
         self.renderer.init_gaussian_scene()
 
-        logger.debug(f"[INFO] loading SD GUIDANCE...")
+        logger.debug("[INFO] loading SD GUIDANCE...")
         if self.guidance_opt.guidance == "MTSD":
             from guidance.multitime_sd_utils import StableDiffusion
         self.guidance = StableDiffusion(
@@ -126,7 +126,7 @@ class SceneTrainer:
         if self.guidance is not None:
             for p in self.guidance.parameters():
                 p.requires_grad = False
-        logger.debug(f"[INFO] loaded SD GUIDANCE!")
+        logger.debug("[INFO] loaded SD GUIDANCE!")
         with torch.no_grad():
             env_obj = self.renderer.gaussians_collection["env"]
             env_obj.text["text_embeddings"] = self.calc_text_embeddings(
@@ -306,7 +306,7 @@ class SceneTrainer:
         else:
             visible_gaussians = self.visible_gaussians
         for viewpoint in self.scene_cams[:render_size]:
-            out = self.renderer.scene_render(visible_gaussians, viewpoint, bg_color=self.bg_color, test=True)
+            out = self.renderer.scene_render(visible_gaussians, viewpoint, bg_color=self.bg_color, test=True, no_grad=True)
             rgb, depth = out["image"], out["depth"]
             if depth is not None:
                 depth_norm = depth / depth.max()
@@ -484,7 +484,7 @@ class SceneTrainer:
                                 self.scene_cams += self.cams_loader.Stage2_Indoor(
                                     affine_params=object_args.affine_params
                                 )
-                            except Exception as e:
+                            except Exception:
                                 logger.debug(
                                     f"A failure during sampling camera pose around: {object_args.clas}-{object_args.objectId}"
                                 )
@@ -530,7 +530,7 @@ class SceneTrainer:
                         affine_params = object_args.affine_params
                         try:
                             self.scene_cams += self.cams_loader.Stage2_Indoor(affine_params=affine_params)
-                        except Exception as e:
+                        except Exception:
                             logger.debug(
                                 f"A failure during sampling camera pose around: {object_args.clas}-{object_args.objectId}"
                             )
@@ -677,6 +677,12 @@ class SceneTrainer:
             only_env=False,
             render_size=len(self.scene_cams),
         )
+        # Combine all objects and scene into a GaussianModel to save it.
+        with torch.no_grad():
+            final_gs = self.renderer.final_combine_all()
+            final_path = self.scene_ckpt_path / f"scene_final_model.ply"
+            final_gs.save_ply(final_path)
+            logger.debug(f"[INFO] save final ply model to {final_path}.")
 
     def prepare_scene_cams(self):
         viewpoint_cams = []
@@ -811,11 +817,10 @@ class SceneTrainer:
                     scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                 )
 
-                image, viewspace_point_tensor, visibility_filter, radii = (
+                image, viewspace_point_tensor, visibility_filter = (
                     out["image"],
                     out["viewspace_points"],
                     out["visibility_filter"],
-                    out["radii"],
                 )
                 depth, alpha = out["depth"], out["alpha"]
                 scales.append(out["scales"].to(self.guidance_opt.g_device))
@@ -1103,7 +1108,7 @@ class SceneTrainer:
 
         for _ in range(self.train_steps):
             self.step += 1
-            if self.gt_images == None:
+            if self.gt_images is None:
                 self.viewpoint_cams = self.scene_cams
 
             # update lr
@@ -1184,7 +1189,6 @@ class SceneTrainer:
             images = []
             depths = []
             alphas = []
-            scales = []
 
             step_size = C_batch_size
             stage_step_rate = min((self.step) / (iters), 1.0)
@@ -1196,18 +1200,13 @@ class SceneTrainer:
             else:
                 visible_gaussians = self.visible_gaussians
 
-            if self.gt_images == None:
+            if self.gt_images is None:
                 for i in range(self.gt_size):
                     viewpoint_cam = self.viewpoint_cams[i]
                     # viewpoint_cam
                     elevation[i] = viewpoint_cam.delta_polar.item()
                     azimuth[i] = viewpoint_cam.delta_azimuth.item()  # [-180, 180]
                     camera_distances[i] = viewpoint_cam.delta_radius.item()  # [] - 3.5
-                    bg_color_gray = torch.tensor(
-                        ([0.7, 0.7, 0.7] if self.dataset_args._white_background else [0, 0, 0]),
-                        dtype=torch.float32,
-                        device="cuda",
-                    )
                     with torch.no_grad():
                         out = self.renderer.scene_render(
                             visible_gaussians,
@@ -1218,12 +1217,12 @@ class SceneTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
-                        image, viewspace_point_tensor, visibility_filter, radii = (
+                        image, viewspace_point_tensor, visibility_filter = (
                             out["image"],
                             out["viewspace_points"],
                             out["visibility_filter"],
-                            out["radii"],
                         )
                         depth, alpha = out["depth"], out["alpha"]
                         images.append(image.to(self.guidance_opt.g_device))
@@ -1279,11 +1278,10 @@ class SceneTrainer:
                     scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                     test=True,
                 )
-                image, viewspace_point_tensor, visibility_filter, radii = (
+                image, viewspace_point_tensor, visibility_filter = (
                     out["image"].to(torch.float16),
                     out["viewspace_points"],
                     out["visibility_filter"],
-                    out["radii"],
                 )
                 depth = out["depth"]
                 loss = l2_loss(image, self.gt_images[i]) * 100
@@ -1514,7 +1512,7 @@ class SceneTrainer:
 
         for _ in range(self.train_steps):  # self.train_steps = 1
             self.step += 1
-            if self.gt_images == None:
+            if self.gt_images is None:
                 self.viewpoint_cams = self.scene_cams
                 self.viewpoint_cams_floor = self.scene_cams_floor
 
@@ -1614,7 +1612,7 @@ class SceneTrainer:
                 visible_gaussians = ["floor", "env"]
             else:
                 visible_gaussians = self.visible_gaussians
-            if self.gt_images == None:
+            if self.gt_images is None:
 
                 for i in range(self.gt_size):
                     viewpoint_cam = self.viewpoint_cams[i]
@@ -1622,11 +1620,6 @@ class SceneTrainer:
                     elevation[i] = viewpoint_cam.delta_polar.item()
                     azimuth[i] = viewpoint_cam.delta_azimuth.item()  # [-180, 180]
                     camera_distances[i] = viewpoint_cam.delta_radius.item()  # [] - 3.5
-                    bg_color_gray = torch.tensor(
-                        ([0.7, 0.7, 0.7] if self.dataset_args._white_background else [0, 0, 0]),
-                        dtype=torch.float32,
-                        device="cuda",
-                    )
                     with torch.no_grad():
                         out = self.renderer.scene_render(
                             visible_gaussians,
@@ -1637,12 +1630,12 @@ class SceneTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
-                        image, viewspace_point_tensor, visibility_filter, radii = (
+                        image, viewspace_point_tensor, visibility_filter = (
                             out["image"],
                             out["viewspace_points"],
                             out["visibility_filter"],
-                            out["radii"],
                         )
                         depth, alpha = out["depth"], out["alpha"]
                         # scales.append(out["scales"].to(self.guidance_opt.g_device))
@@ -1655,11 +1648,6 @@ class SceneTrainer:
                     elevation_floor[i] = viewpoint_cam_floor.delta_polar.item()
                     azimuth_floor[i] = viewpoint_cam_floor.delta_azimuth.item()  # [-180, 180]
                     camera_distances_floor[i] = viewpoint_cam_floor.delta_radius.item()  # [] - 3.5
-                    bg_color_gray = torch.tensor(
-                        ([0.7, 0.7, 0.7] if self.dataset_args._white_background else [0, 0, 0]),
-                        dtype=torch.float32,
-                        device="cuda",
-                    )
                     with torch.no_grad():
                         out = self.renderer.scene_render(
                             visible_gaussians,
@@ -1670,12 +1658,12 @@ class SceneTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
-                        image, viewspace_point_tensor, visibility_filter, radii = (
+                        image, viewspace_point_tensor, visibility_filter = (
                             out["image"],
                             out["viewspace_points"],
                             out["visibility_filter"],
-                            out["radii"],
                         )
                         depth, alpha = out["depth"], out["alpha"]
                         images_floor.append(image.to(self.guidance_opt.g_device))
@@ -1757,11 +1745,10 @@ class SceneTrainer:
                     scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                     test=True,
                 )
-                image, viewspace_point_tensor, visibility_filter, radii = (
+                image, viewspace_point_tensor, visibility_filter = (
                     out["image"].to(torch.float16),
                     out["viewspace_points"],
                     out["visibility_filter"],
-                    out["radii"],
                 )
                 depth = out["depth"]
                 loss = (

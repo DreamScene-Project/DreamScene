@@ -59,7 +59,7 @@ class ObjectTrainer:
     def seed_everything(self, seed):
         try:
             seed = int(seed)
-        except:
+        except Exception:
             seed = np.random.randint(0, 1000000)
 
         os.environ["PYTHONHASHSEED"] = str(seed)
@@ -103,14 +103,14 @@ class ObjectTrainer:
             img_frames.append(image)
             # Img to Numpy
         imageio.mimwrite(
-            os.path.join(save_folder, "video_rgb_{}_{}.mp4".format(gs_obj.id, step)),
+            os.path.join(save_folder, f"video_rgb_{gs_obj.id}_{step}.mp4"),
             img_frames,
             fps=30,
             quality=8,
         )
         if len(depth_frames) > 0:
             imageio.mimwrite(
-                os.path.join(save_folder, "video_depth_{}_{}.mp4".format(gs_obj.id, step)),
+                os.path.join(save_folder, f"video_depth_{gs_obj.id}_{step}.mp4"),
                 depth_frames,
                 fps=30,
                 quality=8,
@@ -124,7 +124,7 @@ class ObjectTrainer:
         """load text-to-image to guide 3D representation generation"""
         from guidance.multitime_sd_utils import StableDiffusion
 
-        logger.debug(f"[INFO] loading SD GUIDANCE...")
+        logger.debug("[INFO] loading SD GUIDANCE...")
         self.guidance = StableDiffusion(
             self.device,
             self.guidance_opt.fp16,
@@ -139,7 +139,7 @@ class ObjectTrainer:
         if self.guidance is not None:
             for p in self.guidance.parameters():
                 p.requires_grad = False
-        logger.debug(f"[INFO] loaded SD GUIDANCE!")
+        logger.debug("[INFO] loaded SD GUIDANCE!")
         self.set_embeds()
 
     @torch.no_grad()
@@ -472,7 +472,7 @@ class ObjectTrainer:
 
         for _ in range(self.train_steps):
             self.step += 1
-            if self.gt_images == None:
+            if self.gt_images is None:
                 self.viewpoint_cams = loadRecoCam(self.pose_args, [4, 12, 14, 6], [100, 85, 75, 55], scale=0.9)
                 self.gt_size = len(self.viewpoint_cams)
 
@@ -549,10 +549,9 @@ class ObjectTrainer:
             elevation = torch.zeros(self.gt_size, dtype=torch.float32, device=self.device)
             azimuth = torch.zeros(self.gt_size, dtype=torch.float32, device=self.device)
             camera_distances = torch.zeros(self.gt_size, dtype=torch.float32, device=self.device)
-            if self.gt_images == None:
+            if self.gt_images is None:
                 for i in range(self.gt_size):
                     viewpoint_cam = self.viewpoint_cams[i]
-                    # 获得相机视点
                     # viewpoint_cam
                     elevation[i] = viewpoint_cam.delta_polar.item()
                     azimuth[i] = viewpoint_cam.delta_azimuth.item()  # [-180, 180]
@@ -567,6 +566,7 @@ class ObjectTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
                         image, viewspace_point_tensor, visibility_filter, radii = (
                             out["image"],

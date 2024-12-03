@@ -103,8 +103,9 @@ class SceneGaussian(GaussianModel):
         else:
             exp_path = Path("experiments/") / self.cfg.log.exp_name
             load_ckpt = True
+
             object_gaussian = 0
-            if load_ckpt == True:
+            if load_ckpt:
                 object_gaussian = self.ckpt_checker(exp_path, id, objectParams)
             if object_gaussian == 0:
                 object_gaussian = ObjectGaussian(
@@ -155,7 +156,8 @@ class SceneGaussian(GaussianModel):
             else:
                 exp_path = Path("experiments/") / self.cfg.log.exp_name
                 load_ckpt = True
-                if load_ckpt == True:
+
+                if load_ckpt:
                     object_gaussian = self.ckpt_checker(
                         exp_path, object_in_scene.id, object_in_scene
                     )
@@ -184,6 +186,7 @@ class SceneGaussian(GaussianModel):
         scene_cfg = self.cfg.scene_configs.scene
         logger.debug(f"Start Init: scene_name: {scene_cfg.scene_name}")
         exp_path = Path("experiments/") / self.cfg.log.exp_name
+
         load_ckpt = True
         logger.debug(f"Create New Scene {scene_cfg.scene_name}")
         self.scene_box = torch.zeros(6).cuda()
@@ -191,7 +194,7 @@ class SceneGaussian(GaussianModel):
         self.add_objects_to_scene(scene_cfg, exp_path)
         self.env_gaussian.training_setup(self.cfg.sceneOptimizationParams)
         self.floor_gaussian.training_setup(self.cfg.sceneOptimizationParams)
-        if load_ckpt == True:
+        if load_ckpt:
             scene_ckpt_path = exp_path / "scene_checkpoints"
             ckpt_list = os.listdir(scene_ckpt_path)
             stage_restore = 0
@@ -513,21 +516,48 @@ class SceneGaussian(GaussianModel):
         translation_matrix = torch.Tensor(translation).float().cuda()
         return translation_matrix
 
+    def final_combine_all(self):
+        # Combine all objects and scene into a GaussianModel
+        tmp = {"_xyz":[], "_features_dc":[], "_features_rest":[], "_scaling":[], "_rotation":[], "_opacity":[], "max_radii2D":[], "xyz_gradient_accum":[], "denom":[]}
+        max_sh_degree = 0
+        for gs_obj in self.gaussians_collection.keys():
+            tmp["_xyz"].append(self.gaussians_collection[gs_obj].model._xyz.detach())
+            tmp["_features_dc"].append(self.gaussians_collection[gs_obj].model._features_dc.detach())
+            tmp["_features_rest"].append(self.gaussians_collection[gs_obj].model._features_rest.detach())
+            tmp["_scaling"].append(self.gaussians_collection[gs_obj].model._scaling.detach())
+            tmp["_rotation"].append(self.gaussians_collection[gs_obj].model._rotation.detach())
+            tmp["_opacity"].append(self.gaussians_collection[gs_obj].model._opacity.detach())
+            tmp["max_radii2D"].append(self.gaussians_collection[gs_obj].model.max_radii2D.detach())
+            tmp["xyz_gradient_accum"].append(self.gaussians_collection[gs_obj].model.xyz_gradient_accum.detach())
+            tmp["denom"].append(self.gaussians_collection[gs_obj].model.denom.detach())
+            max_sh_degree = max(max_sh_degree, self.gaussians_collection[gs_obj].model.max_sh_degree)
+        final_gs = GaussianModel({"sh_degree":max_sh_degree}, "scene")
+        final_gs._xyz = torch.cat(tmp["_xyz"])
+        final_gs._features_dc = torch.cat(tmp["_features_dc"])
+        final_gs._features_rest = torch.cat(tmp["_features_rest"])
+        final_gs._scaling = torch.cat(tmp["_scaling"])
+        final_gs._rotation = torch.cat(tmp["_rotation"])
+        final_gs._opacity = torch.cat(tmp["_opacity"])
+        final_gs.max_radii2D = torch.cat(tmp["max_radii2D"])
+        final_gs.xyz_gradient_accum = torch.cat(tmp["xyz_gradient_accum"])
+        final_gs.denom = torch.cat(tmp["denom"])
+        return final_gs
+
     def score_render(
         self,
         object_gs: GaussianModel,
-        viewpoint_camera,
+        viewpoint_camera: RCamera,
         bg_color: torch.Tensor,
-        scaling_modifier=1.0,
-        black_video=False,
-        override_color=None,
-        sh_deg_aug_ratio=0.1,
-        bg_aug_ratio=0.3,
-        shs_aug_ratio=1.0,
-        scale_aug_ratio=1.0,
-        test=True,
-        compute_cov3D_python=False,
-        convert_SHs_python=False,
+        scaling_modifier: float =1.0,
+        black_video: bool =False,
+        override_color: torch.Tensor =None,
+        sh_deg_aug_ratio: float =0.1,
+        bg_aug_ratio: float =0.3,
+        shs_aug_ratio: float =1.0,
+        scale_aug_ratio: float =1.0,
+        test: bool =True,
+        compute_cov3D_python: bool = False,
+        convert_SHs_python: bool = False,
     ):
         # Background tensor (bg_color) must be on GPU!
         # Create zero tensor. We will use it to make pytorch return gradients of the 2D (screen-space) means
@@ -542,8 +572,8 @@ class SceneGaussian(GaussianModel):
         )
         try:
             screenspace_points.retain_grad()
-        except:
-            pass
+        except Exception as e:
+            logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)
@@ -643,18 +673,19 @@ class SceneGaussian(GaussianModel):
     def scene_render(
         self,
         visible_gaussians: list,
-        viewpoint_camera,
+        viewpoint_camera: RCamera,
         bg_color: torch.Tensor,
-        scaling_modifier=1.0,
-        black_video=False,
-        override_color=None,
-        sh_deg_aug_ratio=0.1,
-        bg_aug_ratio=0.3,
-        shs_aug_ratio=1.0,
-        scale_aug_ratio=1.0,
-        test=False,
-        compute_cov3D_python=False,
-        convert_SHs_python=False,
+        scaling_modifier: float = 1.0,
+        black_video: bool = False,
+        override_color: torch.Tensor = None,
+        sh_deg_aug_ratio: float = 0.1,
+        bg_aug_ratio: float = 0.3,
+        shs_aug_ratio: float = 1.0,
+        scale_aug_ratio: float = 1.0,
+        test: bool =False,
+        compute_cov3D_python: bool =False,
+        convert_SHs_python: bool =False,
+        no_grad: bool =False,
     ):
         """
         Render the scene.
@@ -680,10 +711,11 @@ class SceneGaussian(GaussianModel):
             + 0
         )
 
-        try:
-            screenspace_points.retain_grad()
-        except:
-            pass
+        if not no_grad:
+            try:
+                screenspace_points.retain_grad()
+            except Exception as e:
+                logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)
@@ -702,36 +734,20 @@ class SceneGaussian(GaussianModel):
         # Set up rasterization configuration
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-        try:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                score_flag=False,
-            )
-        except TypeError as e:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                debug=False,
-            )
+        raster_settings = GaussianRasterizationSettings(
+            image_height=int(viewpoint_camera.image_height),
+            image_width=int(viewpoint_camera.image_width),
+            tanfovx=tanfovx,
+            tanfovy=tanfovy,
+            bg=bg_color,
+            scale_modifier=scaling_modifier,
+            viewmatrix=viewpoint_camera.world_view_transform,
+            projmatrix=viewpoint_camera.full_proj_transform,
+            sh_degree=act_SH,
+            campos=viewpoint_camera.camera_center,
+            prefiltered=False,
+            score_flag=False,
+        )
 
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         means3D = torch.cat(
@@ -891,6 +907,7 @@ class SceneGaussian(GaussianModel):
         test: bool = False,
         compute_cov3D_python: bool = False,
         convert_SHs_python: bool = False,
+        no_grad: bool = False,
     ):
         """
         Render the scene.
@@ -908,10 +925,12 @@ class SceneGaussian(GaussianModel):
             )
             + 0
         )
-        try:
-            screenspace_points.retain_grad()
-        except:
-            pass
+
+        if not no_grad:
+            try:
+                screenspace_points.retain_grad()
+            except Exception as e:
+                logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)
@@ -929,36 +948,20 @@ class SceneGaussian(GaussianModel):
 
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-        try:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                score_flag=False,
-            )
-        except TypeError as e:
-            raster_settings = GaussianRasterizationSettings(
-                image_height=int(viewpoint_camera.image_height),
-                image_width=int(viewpoint_camera.image_width),
-                tanfovx=tanfovx,
-                tanfovy=tanfovy,
-                bg=bg_color,
-                scale_modifier=scaling_modifier,
-                viewmatrix=viewpoint_camera.world_view_transform,
-                projmatrix=viewpoint_camera.full_proj_transform,
-                sh_degree=act_SH,
-                campos=viewpoint_camera.camera_center,
-                prefiltered=False,
-                debug=False,
-            )
+        raster_settings = GaussianRasterizationSettings(
+            image_height=int(viewpoint_camera.image_height),
+            image_width=int(viewpoint_camera.image_width),
+            tanfovx=tanfovx,
+            tanfovy=tanfovy,
+            bg=bg_color,
+            scale_modifier=scaling_modifier,
+            viewmatrix=viewpoint_camera.world_view_transform,
+            projmatrix=viewpoint_camera.full_proj_transform,
+            sh_degree=act_SH,
+            campos=viewpoint_camera.camera_center,
+            prefiltered=False,
+            score_flag=False,
+        )
 
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
@@ -1068,7 +1071,7 @@ def prune_list(
     viewpoint_cams = loadSphereCam(pose_args)
     for viewpoint_cam in viewpoint_cams:
         render_pkg = renderer.score_render(object_gs, viewpoint_cam, bg_color)
-        if imp_list == None:
+        if imp_list is None:
             imp_list = render_pkg["important_score"]
         else:
             imp_list += render_pkg["important_score"].detach()
