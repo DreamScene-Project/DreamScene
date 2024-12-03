@@ -532,32 +532,32 @@ class SceneGaussian(GaussianModel):
             tmp["denom"].append(self.gaussians_collection[gs_obj].model.denom.detach())
             max_sh_degree = max(max_sh_degree, self.gaussians_collection[gs_obj].model.max_sh_degree)
         final_gs = GaussianModel({"sh_degree":max_sh_degree}, "scene")
-        final_gs.model._xyz = torch.cat(tmp["_xyz"])
-        final_gs.model._features_dc = torch.cat(tmp["_features_dc"])
-        final_gs.model._features_rest = torch.cat(tmp["_features_rest"])
-        final_gs.model._scaling = torch.cat(tmp["_scaling"])
-        final_gs.model._rotation = torch.cat(tmp["_rotation"])
-        final_gs.model._opacity = torch.cat(tmp["_opacity"])
-        final_gs.model.max_radii2D = torch.cat(tmp["max_radii2D"])
-        final_gs.model.xyz_gradient_accum = torch.cat(tmp["xyz_gradient_accum"])
-        final_gs.model.denom = torch.cat(tmp["denom"])
+        final_gs._xyz = torch.cat(tmp["_xyz"])
+        final_gs._features_dc = torch.cat(tmp["_features_dc"])
+        final_gs._features_rest = torch.cat(tmp["_features_rest"])
+        final_gs._scaling = torch.cat(tmp["_scaling"])
+        final_gs._rotation = torch.cat(tmp["_rotation"])
+        final_gs._opacity = torch.cat(tmp["_opacity"])
+        final_gs.max_radii2D = torch.cat(tmp["max_radii2D"])
+        final_gs.xyz_gradient_accum = torch.cat(tmp["xyz_gradient_accum"])
+        final_gs.denom = torch.cat(tmp["denom"])
         return final_gs
 
     def score_render(
         self,
         object_gs: GaussianModel,
-        viewpoint_camera,
+        viewpoint_camera: RCamera,
         bg_color: torch.Tensor,
-        scaling_modifier=1.0,
-        black_video=False,
-        override_color=None,
-        sh_deg_aug_ratio=0.1,
-        bg_aug_ratio=0.3,
-        shs_aug_ratio=1.0,
-        scale_aug_ratio=1.0,
-        test=True,
-        compute_cov3D_python=False,
-        convert_SHs_python=False,
+        scaling_modifier: float =1.0,
+        black_video: bool =False,
+        override_color: torch.Tensor =None,
+        sh_deg_aug_ratio: float =0.1,
+        bg_aug_ratio: float =0.3,
+        shs_aug_ratio: float =1.0,
+        scale_aug_ratio: float =1.0,
+        test: bool =True,
+        compute_cov3D_python: bool = False,
+        convert_SHs_python: bool = False,
     ):
         # Background tensor (bg_color) must be on GPU!
         # Create zero tensor. We will use it to make pytorch return gradients of the 2D (screen-space) means
@@ -673,18 +673,19 @@ class SceneGaussian(GaussianModel):
     def scene_render(
         self,
         visible_gaussians: list,
-        viewpoint_camera,
+        viewpoint_camera: RCamera,
         bg_color: torch.Tensor,
-        scaling_modifier=1.0,
-        black_video=False,
-        override_color=None,
-        sh_deg_aug_ratio=0.1,
-        bg_aug_ratio=0.3,
-        shs_aug_ratio=1.0,
-        scale_aug_ratio=1.0,
-        test=False,
-        compute_cov3D_python=False,
-        convert_SHs_python=False,
+        scaling_modifier: float = 1.0,
+        black_video: bool = False,
+        override_color: torch.Tensor = None,
+        sh_deg_aug_ratio: float = 0.1,
+        bg_aug_ratio: float = 0.3,
+        shs_aug_ratio: float = 1.0,
+        scale_aug_ratio: float = 1.0,
+        test: bool =False,
+        compute_cov3D_python: bool =False,
+        convert_SHs_python: bool =False,
+        no_grad: bool =False,
     ):
         """
         Render the scene.
@@ -710,10 +711,11 @@ class SceneGaussian(GaussianModel):
             + 0
         )
 
-        try:
-            screenspace_points.retain_grad()
-        except Exception as e:
-            logger.error(e)
+        if not no_grad:
+            try:
+                screenspace_points.retain_grad()
+            except Exception as e:
+                logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)
@@ -905,6 +907,7 @@ class SceneGaussian(GaussianModel):
         test: bool = False,
         compute_cov3D_python: bool = False,
         convert_SHs_python: bool = False,
+        no_grad: bool = False,
     ):
         """
         Render the scene.
@@ -922,10 +925,12 @@ class SceneGaussian(GaussianModel):
             )
             + 0
         )
-        try:
-            screenspace_points.retain_grad()
-        except Exception as e:
-            logger.error(e)
+
+        if not no_grad:
+            try:
+                screenspace_points.retain_grad()
+            except Exception as e:
+                logger.error(e)
 
         if black_video:
             bg_color = torch.zeros_like(bg_color)

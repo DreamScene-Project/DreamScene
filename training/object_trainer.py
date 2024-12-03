@@ -566,6 +566,7 @@ class ObjectTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
                         image, viewspace_point_tensor, visibility_filter, radii = (
                             out["image"],

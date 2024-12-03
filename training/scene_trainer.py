@@ -306,7 +306,7 @@ class SceneTrainer:
         else:
             visible_gaussians = self.visible_gaussians
         for viewpoint in self.scene_cams[:render_size]:
-            out = self.renderer.scene_render(visible_gaussians, viewpoint, bg_color=self.bg_color, test=True)
+            out = self.renderer.scene_render(visible_gaussians, viewpoint, bg_color=self.bg_color, test=True, no_grad=True)
             rgb, depth = out["image"], out["depth"]
             if depth is not None:
                 depth_norm = depth / depth.max()
@@ -1217,6 +1217,7 @@ class SceneTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
                         image, viewspace_point_tensor, visibility_filter = (
                             out["image"],
@@ -1629,6 +1630,7 @@ class SceneTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
                         image, viewspace_point_tensor, visibility_filter = (
                             out["image"],
@@ -1656,6 +1658,7 @@ class SceneTrainer:
                             shs_aug_ratio=self.dataset_args.shs_aug_ratio,
                             scale_aug_ratio=self.dataset_args.scale_aug_ratio,
                             test=True,
+                            no_grad=True,
                         )
                         image, viewspace_point_tensor, visibility_filter = (
                             out["image"],
