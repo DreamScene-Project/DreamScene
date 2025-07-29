@@ -6,8 +6,7 @@ We extend it in [DreamScene: 3D Gaussian-based End-to-end Text-to-3D Scene Gener
 
 **ECCV:** [![Project Page](https://img.shields.io/badge/Project-Website-green)](https://dreamscene-project.github.io) [![arXiv](https://img.shields.io/badge/arXiv-2404.03575-b31b1b.svg)](https://arxiv.org/abs/2404.03575)
 
-**Extension:**  [![Extension Page](https://img.shields.io/badge/Project-Webpage-blue)](https://jahnsonblack.github.io/DreamScene-Full/)  
-[![arXiv](https://img.shields.io/badge/arXiv-2507.13985-b31b1b.svg)](https://arxiv.org/abs/2507.13985)
+**Extension:**  [![Extension Page](https://img.shields.io/badge/Project-Webpage-blue)](https://jahnsonblack.github.io/DreamScene-Full/)  [![arXiv](https://img.shields.io/badge/arXiv-2507.13985-b31b1b.svg)](https://arxiv.org/abs/2507.13985)
 
 Note: We compress these motion pictures for faster previewing.
  <table class="center">
@@ -100,7 +99,7 @@ This work is built on many amazing research works and open-source projects, than
 - [threestudio](https://github.com/threestudio-project/threestudio)
 
 ## Citation
-If you find it useful in your research, please consider citing our paper as follows:
+If you find it useful in your research, please consider citing our papers DreamScene and its extension paper as follows:
 ```
 @inproceedings{li2024dreamscene,
   title={Dreamscene: 3d gaussian-based text-to-3d scene generation via formation pattern sampling},
