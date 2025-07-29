@@ -4,11 +4,9 @@
 This repository contains the official implementation for [DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling](https://arxiv.org/abs/2404.03575).  
 We extend it in [DreamScene: 3D Gaussian-based End-to-end Text-to-3D Scene Generation](https://arxiv.org/abs/2507.13985), with a fully automatic pipeline.
 
-**ECCV:** 
-[![Project Page](https://img.shields.io/badge/Project-Website-green)](https://dreamscene-project.github.io) [![arXiv](https://img.shields.io/badge/arXiv-2404.03575-b31b1b.svg)](https://arxiv.org/abs/2404.03575)
+**ECCV:** [![Project Page](https://img.shields.io/badge/Project-Website-green)](https://dreamscene-project.github.io) [![arXiv](https://img.shields.io/badge/arXiv-2404.03575-b31b1b.svg)](https://arxiv.org/abs/2404.03575)
 
-**Extension:**  
-[![Extension Page](https://img.shields.io/badge/Project-Webpage-blue)](https://jahnsonblack.github.io/DreamScene-Full/)  
+**Extension:**  [![Extension Page](https://img.shields.io/badge/Project-Webpage-blue)](https://jahnsonblack.github.io/DreamScene-Full/)  
 [![arXiv](https://img.shields.io/badge/arXiv-2507.13985-b31b1b.svg)](https://arxiv.org/abs/2507.13985)
 
 Note: We compress these motion pictures for faster previewing.
