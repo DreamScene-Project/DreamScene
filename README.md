@@ -1,19 +1,25 @@
 # DreamScene
-[Haoran Li](https://github.com/Jahnsonblack/), [Haolin Shi](https://i.4c43.work), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), Yong Liao, [Lin Wang](https://vlislab22.github.io/vlislab/linwang.html), [Lik-hang Lee](https://www.lhlee.com/), [Pengyuan Zhou](https://github.com/pengyuan-zhou/)
+[Haoran Li](https://scholar.google.com/citations?user=Rxl8r70AAAAJ&hl=en), [Haolin Shi](https://i.4c43.work), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), Yong Liao, [Lin Wang](https://vlislab22.github.io/vlislab/linwang.html), [Lik-hang Lee](https://www.lhlee.com/), [Pengyuan Zhou](https://github.com/pengyuan-zhou/),[Yuli Tian](https://github.com/lili174311/), [Kun Lan](https://github.com/DreamScene-Project/DreamScene/tree/main),[Pan Hui](https://scholar.google.com/citations?user=dcDrhzMAAAAJ&hl=zh-CN),[Yuyang Wang](https://scholar.google.com/citations?user=D1HTbhEAAAAJ&hl=en),[Yonghui Wang](https://scholar.google.com.hk/citations?user=GGMWna4AAAAJ&hl=zh-CN), 
 
-This repository contains the official implementation for [DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling](https://arxiv.org/abs/2404.03575).
+This repository contains the official implementation for [DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling](https://arxiv.org/abs/2404.03575).  
+We extend it in [DreamScene: 3D Gaussian-based End-to-end Text-to-3D Scene Generation](https://arxiv.org/abs/2507.13985), with a fully automatic pipeline.
 
+**ECCV:** 
 [![Project Page](https://img.shields.io/badge/Project-Website-green)](https://dreamscene-project.github.io) [![arXiv](https://img.shields.io/badge/arXiv-2404.03575-b31b1b.svg)](https://arxiv.org/abs/2404.03575)
+
+**Extension:**  
+[![Extension Page](https://img.shields.io/badge/Project-Webpage-blue)](https://jahnsonblack.github.io/DreamScene-Full/)  
+[![arXiv](https://img.shields.io/badge/arXiv-2507.13985-b31b1b.svg)](https://arxiv.org/abs/2507.13985)
 
 Note: We compress these motion pictures for faster previewing.
  <table class="center">
     <tr style="line-height: 0">
-      <td width=30% style="border: none; text-align: center">A DSLR photo of a ikea style bedroom, ikea style, IKEA </td>
-      <td width=30% style="border: none; text-align: center">A DSLR photo of an autumn park</td>
-      <td width=30% style="border: none; text-align: center">Gray land at the moon, black tranquil universe in the distance, Sci-fi style</td>
+      <td width=30% style="border: none; text-align: center">A DSLR photo of a modern living room. </td>
+      <td width=30% style="border: none; text-align: center">An autumn park.</td>
+      <td width=30% style="border: none; text-align: center">There are two astronauts on the moon, Sci-fi style</td>
     </tr>
     <tr style="line-height: 0">
-      <td width=30% style="border: none"><img src="assets/bedroom_ikea.gif"></td>
+      <td width=30% style="border: none"><img src="assets/livingroom.gif"></td>
       <td width=30% style="border: none"><img src="assets/autumn_park.gif"></td>
       <td width=30% style="border: none"><img src="assets/space.gif"></td>
     </tr>
@@ -21,12 +27,13 @@ Note: We compress these motion pictures for faster previewing.
 
 ### News
 - 2024-07-01: Our paper is accepted by ECCV2024 and to be published!
+- 2025-07-29: We released the [webpage](https://jahnsonblack.github.io/DreamScene-Full/) for our ECCV extension!
 
 ### TODO
 - [x] Release the code of Formation Pattern Sampling (FPS) for single object.
 - [x] Release the code of entire DreamScene for generating dream scenes and our demo video.
 - [ ] More samples, and tools for generating layout interactively.
-
+- [ ] Release the code of the improved extension version with full pipeline.
 ## Getting Start!
 ### Requirments
 
@@ -103,5 +110,13 @@ If you find it useful in your research, please consider citing our paper as foll
   pages={214--230},
   year={2024},
   organization={Springer}
+}
+```
+```
+@article{li2025dreamscene,
+  title={DreamScene: 3D Gaussian-based End-to-end Text-to-3D Scene Generation},
+  author={Li, Haoran and Tian, Yuli and Lan, Kun and Liao, Yong and Wang, Lin and Hui, Pan and Zhou, Peng Yuan},
+  journal={arXiv preprint arXiv:2507.13985},
+  year={2025}
 }
 ```
