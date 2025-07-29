@@ -1,5 +1,5 @@
 # DreamScene
-[Haoran Li](https://scholar.google.com/citations?user=Rxl8r70AAAAJ&hl=en), [Haolin Shi](https://i.4c43.work), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), Yong Liao, [Lin Wang](https://vlislab22.github.io/vlislab/linwang.html), [Lik-hang Lee](https://www.lhlee.com/), [Pengyuan Zhou](https://github.com/pengyuan-zhou/),[Yuli Tian](https://github.com/lili174311/), [Kun Lan](https://github.com/DreamScene-Project/DreamScene/tree/main),[Pan Hui](https://scholar.google.com/citations?user=dcDrhzMAAAAJ&hl=zh-CN),[Yuyang Wang](https://scholar.google.com/citations?user=D1HTbhEAAAAJ&hl=en),[Yonghui Wang](https://scholar.google.com.hk/citations?user=GGMWna4AAAAJ&hl=zh-CN), 
+[Haoran Li](https://scholar.google.com/citations?user=Rxl8r70AAAAJ&hl=en), [Haolin Shi](https://i.4c43.work), [Wenli Zhang](https://github.com/kitty384/), [Wenjun Wu](https://github.com/saiyiii/), Yong Liao, [Lin Wang](https://vlislab22.github.io/vlislab/linwang.html), [Lik-hang Lee](https://www.lhlee.com/), [Pengyuan Zhou](https://github.com/pengyuan-zhou/),[Yuli Tian](https://github.com/lili174311/), [Kun Lan](https://github.com/klan-security),[Pan Hui](https://scholar.google.com/citations?user=dcDrhzMAAAAJ&hl=zh-CN),[Yuyang Wang](https://scholar.google.com/citations?user=D1HTbhEAAAAJ&hl=en),[Yonghui Wang](https://scholar.google.com.hk/citations?user=GGMWna4AAAAJ&hl=zh-CN), 
 
 This repository contains the official implementation for [DreamScene: 3D Gaussian-based Text-to-3D Scene Generation via Formation Pattern Sampling](https://arxiv.org/abs/2404.03575).  
 We extend it in [DreamScene: 3D Gaussian-based End-to-end Text-to-3D Scene Generation](https://arxiv.org/abs/2507.13985), with a fully automatic pipeline.
@@ -80,6 +80,7 @@ mv pointE_finetuned_with_330kdata.pth point_e_model_cache/
 ```bash
 python main.py --object --config configs/objects/sample.yaml
 ```
+
 
 ### Generate Entire Scenes
 
