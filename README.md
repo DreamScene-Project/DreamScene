@@ -6,7 +6,7 @@ We extend it in [DreamScene: 3D Gaussian-based End-to-end Text-to-3D Scene Gener
 
 **ECCV:** [![Project Page](https://img.shields.io/badge/Project-Website-green)](https://dreamscene-project.github.io) [![arXiv](https://img.shields.io/badge/arXiv-2404.03575-b31b1b.svg)](https://arxiv.org/abs/2404.03575)
 
-**Extension:**  [![Extension Page](https://img.shields.io/badge/Project-Webpage-blue)](https://jahnsonblack.github.io/DreamScene-Full/)  [![arXiv](https://img.shields.io/badge/arXiv-2507.13985-b31b1b.svg)](https://arxiv.org/abs/2507.13985)
+**TPAMI:**  [![Extension Page](https://img.shields.io/badge/Project-Webpage-blue)](https://jahnsonblack.github.io/DreamScene-Full/)  [![arXiv](https://img.shields.io/badge/arXiv-2507.13985-b31b1b.svg)](https://arxiv.org/abs/2507.13985)
 
 Note: We compress these motion pictures for faster previewing.
  <table class="center">
@@ -25,6 +25,7 @@ Note: We compress these motion pictures for faster previewing.
 ### News
 - 2024-07-01: Our paper is accepted by ECCV2024 and to be published!
 - 2025-07-29: We released the [webpage](https://jahnsonblack.github.io/DreamScene-Full/) for our ECCV extension!
+- 2025-09-28: Our extended paper has been accepted by TPAMI and will be published soon!
 
 ### TODO
 - [x] Release the code of Formation Pattern Sampling (FPS) for single object.
